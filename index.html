@@ -80,7 +80,7 @@ footer{padding:28px 0;border-top:1px solid var(--line);color:#91a5b8;font-size:1
 <a class="btn dark" href="#services">⚡ Explore Services</a>
 <a class="btn dark" href="#contact">📋 Get a Quote</a>
 </div></div></section>
-
+<div class="electric-line"></div>
 <section class="gbp"><div class="wrap"><div class="gbp-box"><div><strong style="font-size:18px">Google Business Profile</strong><p>Open our Google profile or leave an honest customer review.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn gold" href="https://maps.google.com/maps?cid=582244430998566251" target="_blank" rel="noopener">📍 Open Google Profile</a><a class="btn dark" href="https://search.google.com/local/writereview?placeid=ChIJ4yUKAO3lDDkRa3UeojmMFAg" target="_blank" rel="noopener">⭐ Write a Review</a></div></div></div></section>
 
 <section class="band"><div class="wrap stats">
@@ -131,4 +131,37 @@ footer{padding:28px 0;border-top:1px solid var(--line);color:#91a5b8;font-size:1
 
 <a class="float" href="https://wa.me/919821402799?text=Hello%20Israfil%20Electrical%20Works%2C%20I%20have%20an%20electrical%20project%20requirement." target="_blank" rel="noopener" aria-label="WhatsApp">✆</a>
 <footer><div class="wrap foot"><span>© 2026 Israfil Electrical Works. All rights reserved.</span><span>Complete Electrical Solution · Your Electrical Partner</span></div></footer>
-</body></html>
+<script>
+const counters = document.querySelectorAll('.counter');
+
+const observer = new IntersectionObserver((entries, obs) => {
+  if (entries.some(entry => entry.isIntersecting)) {
+
+    counters.forEach(el => {
+      const target = Number(el.dataset.target);
+      const suffix = el.dataset.suffix || '';
+      let current = 0;
+
+      const timer = setInterval(() => {
+        current += Math.ceil(target / 60);
+
+        if (current >= target) {
+          current = target;
+          clearInterval(timer);
+        }
+
+        el.textContent = current + suffix;
+      }, 25);
+    });
+
+    obs.disconnect();
+  }
+}, { threshold: 0.3 });
+
+const stats = document.querySelector('.stats');
+
+if (stats) {
+  observer.observe(stats);
+}
+</script>
+</body></html></body></html>
