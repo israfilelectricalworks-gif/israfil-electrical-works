@@ -34,6 +34,32 @@ footer{padding:28px 0;border-top:1px solid var(--line);color:#91a5b8;font-size:1
 @keyframes tickerMove{
   0%{transform:translateX(0)}
   100%{transform:translateX(-50%)}
+}.electric-line{
+  position:relative;
+  height:3px;
+  margin:0 auto;
+  width:min(900px,88%);
+  background:linear-gradient(90deg,transparent,#f2b72d 12%,#ffd86a 50%,#f2b72d 88%,transparent);
+  overflow:hidden;
+  border-radius:999px;
+  box-shadow:0 0 10px rgba(242,183,45,.35);
+}
+.electric-line::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  left:-30px;
+  width:30px;
+  height:30px;
+  transform:translateY(-50%);
+  border-radius:50%;
+  background:#fff7c2;
+  box-shadow:0 0 8px #fff,0 0 18px #ffd86a,0 0 30px #f2b72d;
+  animation:energyRun 2.2s linear infinite;
+}
+@keyframes energyRun{
+  0%{left:-30px}
+  100%{left:calc(100% + 30px)}
 }</style>
 </head>
 <body>
