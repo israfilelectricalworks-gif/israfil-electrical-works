@@ -28,10 +28,16 @@ header{position:sticky;top:0;z-index:90;background:rgba(8,25,45,.96);backdrop-fi
 footer{padding:28px 0;border-top:1px solid var(--line);color:#91a5b8;font-size:13px}.foot{display:flex;justify-content:space-between;gap:18px}.float{position:fixed;right:18px;bottom:18px;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#06200f;font-size:26px;font-weight:900;z-index:100;box-shadow:0 16px 35px rgba(37,211,102,.27)}
 @media(max-width:900px){.navlinks{display:none}.grid{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.about,.contact{grid-template-columns:1fr}}
 @media(max-width:620px){.top .wrap span:first-child{display:none}.top .wrap{justify-content:center}.actions .dark{display:none}.hero-buttons .btn{width:100%}.head{display:block}.head p{margin-top:12px}.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.gbp-box{flex-direction:column;align-items:flex-start}.foot{flex-direction:column}.brand-logo{width:52px;height:52px}.brand-text{font-size:14px}}
-</style>
+.ticker{width:100%;overflow:hidden;white-space:nowrap}
+.ticker-track{display:inline-flex;min-width:max-content;animation:tickerMove 18s linear infinite}
+.ticker-track span{color:#ffd86a;font-weight:900;letter-spacing:1.4px;text-transform:uppercase;padding-right:60px}
+@keyframes tickerMove{
+  0%{transform:translateX(0)}
+  100%{transform:translateX(-50%)}
+}</style>
 </head>
 <body>
-<div class="top"><div class="wrap"><span>Industrial & Commercial Electrical Contractor</span><span><a href="tel:+917011022348">Call 7011022348</a> · <a href="tel:+919821402799">9821402799</a></span></div></div>
+<div class="top"><div class="wrap"><div class="ticker"><div class="ticker-track"><span>⚡ INDUSTRIAL & COMMERCIAL ELECTRICAL CONTRACTOR • COMPLETE ELECTRICAL SOLUTION • YOUR ELECTRICAL PARTNER • </span><span>⚡ INDUSTRIAL & COMMERCIAL ELECTRICAL CONTRACTOR • COMPLETE ELECTRICAL SOLUTION • YOUR ELECTRICAL PARTNER • </span></div></div></div></div>
 <!-- Vercel deployment sync check -->
 <header><div class="wrap nav">
 <a class="brand" href="#home"><img class="brand-logo" src="asset/logo.png" alt="Israfil Electrical Works Logo"><div class="brand-text">ISRAFIL ELECTRICAL WORKS<small>COMPLETE ELECTRICAL SOLUTION</small></div></a>
