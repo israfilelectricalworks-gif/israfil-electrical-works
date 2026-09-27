@@ -214,39 +214,6 @@ footer{padding:28px 0;border-top:1px solid var(--line);color:#91a5b8;font-size:1
   line-height:1.55;
 }
 
-.products-arrow{
-  position:absolute;
-  top:50%;
-  transform:translateY(-50%);
-  z-index:5;
-  width:46px;
-  height:46px;
-  border:none;
-  border-radius:50%;
-  background:rgba(7,22,38,.92);
-  color:#fff;
-  font-size:24px;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 8px 25px rgba(0,0,0,.35);
-}
-
-.products-arrow:hover{
-  background:var(--gold2);
-  color:#071624;
-}
-
-.products-arrow.left{
-  left:10px;
-}
-
-.products-arrow.right{
-  right:10px;
-}
-
 .see-all-products-wrap{
   text-align:center;
   margin-top:28px;
@@ -381,12 +348,6 @@ safe and professional electrical installations.
 
 
 <div class="products-carousel" id="productsCarousel">
-
-<button class="products-arrow left"
-id="productPrev"
-aria-label="Previous products">
-&#10094;
-</button>
 
 
 <div class="products-viewport">
@@ -738,12 +699,6 @@ aria-label="Previous products">
 </div>
 
 
-<button class="products-arrow right"
-id="productNext"
-aria-label="Next products">
-&#10095;
-</button>
-
 </div>
 
 
@@ -965,8 +920,6 @@ if (stats) {
 <script>(function(){
 
   const track = document.getElementById("productsTrack");
-  const prevBtn = document.getElementById("productPrev");
-  const nextBtn = document.getElementById("productNext");
   const seeAllBtn = document.getElementById("seeAllProducts");
   const allGrid = document.getElementById("allProductsGrid");
   const carousel = document.getElementById("productsCarousel");
@@ -1029,50 +982,7 @@ if (stats) {
     requestAnimationFrame(autoSlide);
   }
 
-
-  /* NEXT BUTTON */
-  nextBtn.addEventListener("click", function(){
-
-    const card = track.querySelector(".product-card");
-
-    if(!card) return;
-
-    const amount = card.offsetWidth + 18;
-
-    position += amount;
-
-    const width = getSetWidth();
-
-    if(position >= width){
-      position -= width;
-    }
-
-    render();
-
-  });
-
-
-  /* PREVIOUS BUTTON */
-  prevBtn.addEventListener("click", function(){
-
-    const card = track.querySelector(".product-card");
-
-    if(!card) return;
-
-    const amount = card.offsetWidth + 18;
-
-    position -= amount;
-
-    const width = getSetWidth();
-
-    if(position < 0){
-      position += width;
-    }
-
-    render();
-
-  });
-
+ 
 
   /* MOUSE / MOBILE SWIPE */
   track.addEventListener("pointerdown", function(e){
