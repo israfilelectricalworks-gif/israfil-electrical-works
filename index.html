@@ -118,6 +118,71 @@ footer{padding:28px 0;border-top:1px solid var(--line);color:#91a5b8;font-size:1
 
 .product-image-link img{
   display:block;
+}
+
+.image-lightbox{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:30px;
+  background:rgba(0,0,0,.88);
+  backdrop-filter:blur(8px);
+  opacity:0;
+  transition:opacity .25s ease;
+}
+
+.image-lightbox.show{
+  display:flex;
+  opacity:1;
+}
+
+.image-lightbox img{
+  max-width:95vw;
+  max-height:90vh;
+  width:auto;
+  height:auto;
+  border-radius:14px;
+  object-fit:contain;
+  box-shadow:0 25px 80px rgba(0,0,0,.6);
+  transform:scale(.92);
+  transition:transform .3s ease;
+}
+
+.image-lightbox.show img{
+  transform:scale(1);
+}
+
+.image-lightbox-close{
+  position:absolute;
+  top:18px;
+  right:22px;
+  width:45px;
+  height:45px;
+  border:none;
+  border-radius:50%;
+  background:rgba(255,255,255,.12);
+  color:#fff;
+  font-size:28px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.image-lightbox-close:hover{
+  background:var(--gold2);
+  color:#08192d;
+}
+  .product-image-link{
+  display:block;
+  cursor:zoom-in;
+}
+
+.product-image-link img{
+  display:block;
   }
 .product-info{
   padding:18px;
@@ -742,6 +807,21 @@ See All Products <span>↓</span>
 
 <a class="float" href="https://wa.me/919821402799?text=Hello%20Israfil%20Electrical%20Works%2C%20I%20have%20an%20electrical%20project%20requirement." target="_blank" rel="noopener" aria-label="WhatsApp">✆</a>
 <footer><div class="wrap foot"><span>© 2026 Israfil Electrical Works. All rights reserved.</span><span>Complete Electrical Solution · Your Electrical Partner</span></div></footer>
+  <!-- SMOOTH IMAGE LIGHTBOX -->
+
+<div class="image-lightbox" id="imageLightbox">
+
+  <button class="image-lightbox-close"
+          id="imageLightboxClose"
+          aria-label="Close image">
+    &times;
+  </button>
+
+  <img id="lightboxImage"
+       src=""
+       alt="Product image">
+
+</div>
 <script>
 const counters = document.querySelectorAll('.counter');
 
@@ -967,6 +1047,93 @@ if (stats) {
 
   /* START AUTO SLIDE */
   autoSlide();
+
+})();
+  </script><script>
+(function(){
+
+  const lightbox = document.getElementById("imageLightbox");
+  const lightboxImage = document.getElementById("lightboxImage");
+  const closeBtn = document.getElementById("imageLightboxClose");
+
+  if(!lightbox || !lightboxImage || !closeBtn) return;
+
+
+  /* OPEN IMAGE */
+
+  document.addEventListener("click", function(e){
+
+    const link = e.target.closest(".product-image-link");
+
+    if(!link) return;
+
+    e.preventDefault();
+
+    const image = link.querySelector("img");
+
+    if(!image) return;
+
+    lightboxImage.src = image.src;
+    lightboxImage.alt = image.alt || "Product image";
+
+    lightbox.classList.add("show");
+
+    document.body.style.overflow = "hidden";
+
+  });
+
+
+  /* CLOSE BUTTON */
+
+  closeBtn.addEventListener("click", function(){
+
+    lightbox.classList.remove("show");
+
+    document.body.style.overflow = "";
+
+    setTimeout(function(){
+      lightboxImage.src = "";
+    }, 250);
+
+  });
+
+
+  /* CLOSE BY BACKGROUND */
+
+  lightbox.addEventListener("click", function(e){
+
+    if(e.target === lightbox){
+
+      lightbox.classList.remove("show");
+
+      document.body.style.overflow = "";
+
+      setTimeout(function(){
+        lightboxImage.src = "";
+      }, 250);
+
+    }
+
+  });
+
+
+  /* ESC KEY */
+
+  document.addEventListener("keydown", function(e){
+
+    if(e.key === "Escape"){
+
+      lightbox.classList.remove("show");
+
+      document.body.style.overflow = "";
+
+      setTimeout(function(){
+        lightboxImage.src = "";
+      }, 250);
+
+    }
+
+  });
 
 })();
   </script>
