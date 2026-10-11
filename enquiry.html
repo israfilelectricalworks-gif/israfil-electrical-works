@@ -160,6 +160,20 @@ textarea { min-height: 105px; resize: vertical; }
           required maxlength="200">
       </div>
 
+      <div class="field">
+        <label for="state">State / Union Territory <span class="req">*</span></label>
+        <select id="state" name="State" required>
+          <option value="">Choose State / UT</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="district">District <span class="req">*</span></label>
+        <select id="district" name="District" required disabled>
+          <option value="">Pehle State chunein</option>
+        </select>
+      </div>
+      
       <div class="field wide">
         <label for="service">Required Service <span class="req">*</span></label>
         <select id="service" name="Required Service" required>
@@ -254,6 +268,59 @@ const otherService = document.getElementById('otherService');
 const statusBox = document.getElementById('status');
 const submitBtn = document.getElementById('submitBtn');
 
+const stateSelect = document.getElementById('state');
+const districtSelect = document.getElementById('district');
+
+let stateDistrictData = [];
+
+async function loadStateDistricts() {
+  try {
+    const response = await fetch(
+      'https://raw.githubusercontent.com/CodingMation/indian-states-districts/main/data/india_states_districts.min.json'
+    );
+
+    if (!response.ok) throw new Error('Data unavailable');
+
+    stateDistrictData = await response.json();
+
+    stateSelect.innerHTML =
+      '<option value="">Choose State / UT</option>';
+
+    stateDistrictData.forEach(item => {
+      const option = document.createElement('option');
+      option.value = item.name;
+      option.textContent = item.name;
+      stateSelect.appendChild(option);
+    });
+  } catch (error) {
+    stateSelect.innerHTML =
+      '<option value="">List load nahi hui — refresh karein</option>';
+  }
+}
+
+stateSelect.addEventListener('change', () => {
+  districtSelect.innerHTML =
+    '<option value="">Choose District</option>';
+  districtSelect.disabled = true;
+
+  const selectedState = stateDistrictData.find(
+    item => item.name === stateSelect.value
+  );
+
+  if (!selectedState) return;
+
+  selectedState.districts.forEach(item => {
+    const option = document.createElement('option');
+    option.value = item.name;
+    option.textContent = item.name;
+    districtSelect.appendChild(option);
+  });
+
+  districtSelect.disabled = false;
+});
+
+loadStateDistricts();
+  
 service.addEventListener('change', () => {
   const show = service.value === 'Other Electrical Work';
   otherWrap.classList.toggle('hidden', !show);
@@ -273,6 +340,8 @@ form.addEventListener('submit', async (event) => {
     'Name: ' + v['Customer Name'],
     'Mobile: ' + v['Mobile Number'],
     'Company: ' + (v['Company / Factory Name'] || 'Not provided'),
+    'State: ' + v['State'],
+    'District: ' + v['District'],
     'Location: ' + v['Project Location'],
     'Service: ' + v['Required Service'] +
       (v['Other Service Details'] ? ' — ' + v['Other Service Details'] : ''),
