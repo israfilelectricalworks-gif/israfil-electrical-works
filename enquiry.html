@@ -35,6 +35,15 @@ header {
   align-items: center;
   gap: 12px;
 }
+
+.header-logo {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 6px;
+}
+  
 .brand { font-weight: 900; }
 .brand small {
   display: block;
@@ -121,15 +130,26 @@ textarea { min-height: 105px; resize: vertical; }
 </head>
 
 <body>
+
 <header>
   <div class="wrap nav">
-    <a class="brand" href="/">
-      ISRAFIL ELECTRICAL WORKS
-      <small>COMPLETE ELECTRICAL SOLUTION</small>
-    </a>
+    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+      <a href="/" aria-label="Israfil Electrical Works Home">
+        <img
+          src="/asset/logo.webp"
+          alt="Israfil Electrical Works Logo"
+          class="header-logo"
+        >
+      </a>
+      <a class="brand" href="/">
+        ISRAFIL ELECTRICAL WORKS
+        <small>COMPLETE ELECTRICAL SOLUTION</small>
+      </a>
+    </div>
     <a class="back" href="/">← Home</a>
   </div>
 </header>
+  
 
 <main class="wrap">
   <div class="intro">
@@ -140,12 +160,7 @@ textarea { min-height: 105px; resize: vertical; }
 
   
 <form id="enquiryForm">
-    <img
-      src="/asset/logo.webp"
-      alt="Israfil Electrical Works Logo"
-      class="form-logo"
-    >
-
+  
     <div class="grid">
       
       <div class="field">
