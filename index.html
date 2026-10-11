@@ -309,7 +309,7 @@ footer{padding:28px 0;border-top:1px solid var(--line);color:#91a5b8;font-size:1
   display: block;
   width: 100%;
   height: 380px;
-  touch-action: pan-y;
+  touch-action: pan-none;
 }
 
 .cube-game-panel {
@@ -840,26 +840,13 @@ See All Products <span>↓</span>
           <br />
           Moves: <strong id="cubeMoveCount">0</strong>
         </div>
-
-        <div class="cube-game-controls">
-          <button data-cube-move="U">U</button>
-          <button data-cube-move="U'">U′</button>
-          <button data-cube-move="R">R</button>
-          <button data-cube-move="R'">R′</button>
-          <button data-cube-move="F">F</button>
-          <button data-cube-move="F'">F′</button>
-          <button data-cube-move="D">D</button>
-          <button data-cube-move="D'">D′</button>
-          <button data-cube-move="L">L</button>
-          <button data-cube-move="L'">L′</button>
-          <button data-cube-move="B">B</button>
-          <button data-cube-move="B'">B′</button>
-        </div>
-
+<div class="cube-game-hint">
+  <strong>Single finger:</strong> swipe a visible face to turn it.<br>
+  <strong>Two fingers:</strong> drag to rotate the whole cube view.
+</div>
         <div class="cube-game-actions">
           <button id="cubeScramble">Scramble Cube</button>
           <button id="cubeReset">Reset Cube</button>
-          <button id="cubeShuffleView">Change View</button>
         </div>
       </div>
     </div>
