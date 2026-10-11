@@ -30,6 +30,19 @@ header {
   border-bottom: 1px solid var(--line);
 }
 
+ 
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.back {
+  color: var(--gold);
+  white-space: nowrap;
+  margin-left: auto;
+}
   
 .header-logo {
   width: 58px;
@@ -119,7 +132,7 @@ textarea { min-height: 105px; resize: vertical; }
 @media(max-width:600px) {
   .grid { grid-template-columns: 1fr; }
   .wide { grid-column: auto; }
-  .nav { align-items: flex-start; }
+  .nav { align-items: center; }
 }
 </style>
 </head>
