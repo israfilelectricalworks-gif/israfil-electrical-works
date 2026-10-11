@@ -215,6 +215,64 @@ pivot.rotation[spec.axis] = angle * eased;
     return { face, point: hit.point.clone() };
   }
 
+  function getSwipeTurn(hit, dx, dy) {
+    const face = hit.face;
+
+    const axisName = {
+      R: "x", L: "x",
+      U: "y", D: "y",
+      F: "z", B: "z"
+    }[face];
+
+    const positiveBaseAngle = ["L", "D", "B"].includes(face);
+    const side = ["R", "U", "F"].includes(face) ? 1 : -1;
+
+    const axisLocal = new THREE.Vector3();
+    axisLocal[axisName] = 1;
+
+    cubeRoot.updateMatrixWorld(true);
+    camera.updateMatrixWorld(true);
+
+    const origin = cubeRoot.localToWorld(
+      new THREE.Vector3(0, 0, 0)
+    );
+
+    const axisWorld = cubeRoot.localToWorld(axisLocal)
+      .sub(origin)
+      .normalize();
+
+    const centerLocal = new THREE.Vector3();
+    centerLocal[axisName] = side * spacing;
+
+    const centerWorld = cubeRoot.localToWorld(centerLocal);
+    const radial = hit.point.clone().sub(centerWorld);
+    const tangent = axisWorld.clone().cross(radial);
+
+    let dot = 0;
+
+    if (tangent.lengthSq() > 1e-8) {
+      const p1 = hit.point.clone().project(camera);
+      const p2 = hit.point.clone()
+        .add(tangent.normalize().multiplyScalar(0.1))
+        .project(camera);
+
+      const rect = canvas.getBoundingClientRect();
+      const vx = (p2.x - p1.x) * rect.width / 2;
+      const vy = -(p2.y - p1.y) * rect.height / 2;
+
+      dot = dx * vx + dy * vy;
+    } else {
+      dot = Math.abs(dx) >= Math.abs(dy) ? dx : -dy;
+    }
+
+    return {
+      inverse: (dot > 0) !== positiveBaseAngle,
+      direction: Math.abs(dx) >= Math.abs(dy)
+        ? (dx < 0 ? "left" : "right")
+        : (dy < 0 ? "up" : "down")
+    };
+  }
+  
   function getTwoPointerCenter() {
     const pts = [...pointers.values()];
     return {
