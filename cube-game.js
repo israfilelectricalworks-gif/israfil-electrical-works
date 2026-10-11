@@ -101,22 +101,51 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
   function setStatus(text) { status.textContent = text; }
   function updateMoves() { movesLabel.textContent = String(moveCount); }
 
-  function snapCubies(items) {
-    const quarter = Math.PI / 2;
-    for (const cubie of items) {
-      cubie.position.set(
-        Math.round(cubie.position.x / spacing) * spacing,
-        Math.round(cubie.position.y / spacing) * spacing,
-        Math.round(cubie.position.z / spacing) * spacing
-      );
-      cubie.rotation.set(
-        Math.round(cubie.rotation.x / quarter) * quarter,
-        Math.round(cubie.rotation.y / quarter) * quarter,
-        Math.round(cubie.rotation.z / quarter) * quarter
-      );
-      cubie.updateMatrix();
+  
+function snapCubies(items) {
+  const quarter = Math.PI / 2;
+  const orientations = [];
+
+  for (let x = 0; x < 4; x++) {
+    for (let y = 0; y < 4; y++) {
+      for (let z = 0; z < 4; z++) {
+        orientations.push(
+          new THREE.Quaternion().setFromEuler(
+            new THREE.Euler(
+              x * quarter,
+              y * quarter,
+              z * quarter,
+              "XYZ"
+            )
+          )
+        );
+      }
     }
   }
+
+  for (const cubie of items) {
+    cubie.position.set(
+      Math.round(cubie.position.x / spacing) * spacing,
+      Math.round(cubie.position.y / spacing) * spacing,
+      Math.round(cubie.position.z / spacing) * spacing
+    );
+
+    let best = orientations[0];
+    let bestDot = -1;
+
+    for (const orientation of orientations) {
+      const dot = Math.abs(cubie.quaternion.dot(orientation));
+      if (dot > bestDot) {
+        bestDot = dot;
+        best = orientation;
+      }
+    }
+
+    cubie.quaternion.copy(best);
+    cubie.updateMatrix();
+  }
+}
+  
 
   function rotateLayer(face, inverse = false) {
     if (busy) return Promise.resolve();
@@ -142,11 +171,12 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
     selected.forEach(cubie => pivot.attach(cubie));
 
     const start = performance.now();
-    const duration = 190;
+    const duration = 260;
     return new Promise(resolve => {
       function animateTurn(now) {
         const t = Math.min(1, (now - start) / duration);
-        pivot.rotation[spec.axis] = angle * (1 - Math.pow(1 - t, 3));
+        const eased = 0.5 - Math.cos(Math.PI * t) / 2;
+pivot.rotation[spec.axis] = angle * eased;
         if (t < 1) {
           requestAnimationFrame(animateTurn);
         } else {
@@ -182,7 +212,7 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
     if (max === abs[0]) face = localNormal.x >= 0 ? "R" : "L";
     else if (max === abs[1]) face = localNormal.y >= 0 ? "U" : "D";
     else face = localNormal.z >= 0 ? "F" : "B";
-    return { face, point: { x: clientX, y: clientY } };
+    return { face, point: hit.point.clone() };
   }
 
   function getTwoPointerCenter() {
@@ -237,42 +267,48 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
     }
   });
 
-  async function finishPointer(event) {
-    if (!pointers.has(event.pointerId)) return;
-    const wasTwoFinger = pointers.size >= 2;
-    const start = oneFingerStart;
-    const dx = start ? event.clientX - start.x : 0;
-    const dy = start ? event.clientY - start.y : 0;
-    pointers.delete(event.pointerId);
+  
+async function finishPointer(event) {
+  if (!pointers.has(event.pointerId)) return;
 
-    if (wasTwoFinger) {
-      twoFingerStart = null;
-      oneFingerStart = null;
-      if (pointers.size === 1) {
-        const remaining = [...pointers.values()][0];
-        oneFingerStart = {
-          x: remaining.x, y: remaining.y,
-          hit: getFaceAt(remaining.x, remaining.y),
-          movedAsView: false
-        };
-      }
-      return;
-    }
+  const wasTwoFinger = pointers.size >= 2;
+  const start = oneFingerStart;
+  const dx = start ? event.clientX - start.x : 0;
+  const dy = start ? event.clientY - start.y : 0;
 
+  pointers.delete(event.pointerId);
+
+  if (wasTwoFinger) {
+    twoFingerStart = null;
     oneFingerStart = null;
-    if (!start || !start.hit || Math.hypot(dx, dy) < 22 || busy) {
-      setStatus("One finger: swipe a visible cube face to turn it");
-      return;
-    }
 
-    const dominant = Math.abs(dx) >= Math.abs(dy) ? dx : dy;
-    // A reverse swipe reverses the turn. Face-side adjustment keeps the gesture intuitive.
-    const negativeSide = ["L", "D", "B"].includes(start.hit.face);
-    const inverse = (dominant < 0) !== negativeSide;
-    setStatus("Turning " + start.hit.face + " face…");
-    await rotateLayer(start.hit.face, inverse);
-    setStatus("Ready — one finger turns a face, two fingers rotate the cube");
+    if (pointers.size === 1) {
+      const remaining = [...pointers.values()][0];
+      oneFingerStart = {
+        x: remaining.x,
+        y: remaining.y,
+        hit: getFaceAt(remaining.x, remaining.y),
+        movedAsView: false
+      };
+    }
+    return;
   }
+
+  oneFingerStart = null;
+
+  if (!start || !start.hit ||
+      Math.hypot(dx, dy) < 18 || busy) {
+    setStatus("Swipe a visible face to turn its layer");
+    return;
+  }
+
+  const turn = getSwipeTurn(start.hit, dx, dy);
+  setStatus("Turning " + start.hit.face + " layer " + turn.direction + "…");
+
+  await rotateLayer(start.hit.face, turn.inverse);
+  setStatus("Ready — swipe a face to turn its layer");
+}
+  
 
   canvas.addEventListener("pointerup", finishPointer);
   canvas.addEventListener("pointercancel", event => {
