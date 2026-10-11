@@ -50,14 +50,7 @@
     setStatus("Cube reset — solved state");
   });
 
-  document.getElementById("cubeShuffleView").addEventListener("click", () => {
-    if (busy) return;
-    cubeRoot.rotation.set(
-      (Math.random() - 0.5) * 0.8,
-      Math.random() * Math.PI * 2,
-      (Math.random() - 0.5) * 0.4
-    );
-  });
+  
 
   createCubies();
   cubeRoot.rotation.set(-0.22, 0.45, 0);
