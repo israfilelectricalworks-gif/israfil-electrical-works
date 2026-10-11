@@ -180,6 +180,94 @@ textarea { min-height: 105px; resize: vertical; }
     animation: none;
   }
 }
+ 
+/* Full-screen electrical success celebration */
+#successScreen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px;
+  background:
+    radial-gradient(circle at center, #153d59 0%, #08192d 65%);
+  color: #fff;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+#successScreen.show {
+  display: flex;
+  animation: electricReveal .7s ease both;
+}
+
+.success-content {
+  width: 100%;
+  max-width: 560px;
+}
+
+.electric-icon {
+  font-size: 64px;
+  line-height: 1.2;
+  margin-bottom: 18px;
+  animation: electricPulse 1.4s ease-in-out infinite;
+  filter: drop-shadow(0 0 16px #ffd86a);
+}
+
+#successScreen h1 {
+  color: #ffd86a;
+  font-size: clamp(30px, 7vw, 48px);
+  line-height: 1.15;
+  margin: 12px 0;
+}
+
+#successScreen p {
+  color: #d7e5f0;
+  font-size: 17px;
+}
+
+.success-brand {
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin-top: 20px;
+}
+
+.success-brand small {
+  display: block;
+  color: #ffd86a;
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+.success-wa {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 14px 22px;
+  border-radius: 10px;
+  background: #ffd86a;
+  color: #08192d !important;
+  font-weight: 900;
+}
+
+@keyframes electricReveal {
+  from { opacity: 0; transform: scale(.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes electricPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #successScreen.show,
+  .electric-icon {
+    animation: none;
+  }
+}
   
 .status a, .foot a { color: var(--gold); }
 .fine, .foot {
@@ -358,6 +446,28 @@ textarea { min-height: 105px; resize: vertical; }
   </div>
 </main>
 
+<div id="successScreen" role="status" aria-live="polite">
+  <div class="success-content">
+    <div class="electric-icon" aria-hidden="true">⚡</div>
+
+    <h1>Congratulations!</h1>
+
+    <p>Your enquiry has been submitted successfully.</p>
+
+    <div class="success-brand">
+      ISRAFIL ELECTRICAL WORKS
+      <small>COMPLETE ELECTRICAL SOLUTION</small>
+    </div>
+
+    <p>Thank you for trusting us with your electrical project.</p>
+
+    <a id="successWhatsApp" class="success-wa"
+       href="#" target="_blank" rel="noopener">
+      Send Details on WhatsApp →
+    </a>
+  </div>
+</div>
+  
 <script>
 const form = document.getElementById('enquiryForm');
 const service = document.getElementById('service');
@@ -366,6 +476,9 @@ const otherService = document.getElementById('otherService');
 const statusBox = document.getElementById('status');
 const submitBtn = document.getElementById('submitBtn');
 
+const successScreen = document.getElementById('successScreen');
+const successWhatsApp = document.getElementById('successWhatsApp');
+  
 const stateSelect = document.getElementById('state');
 const districtSelect = document.getElementById('district');
 
@@ -475,17 +588,15 @@ form.addEventListener('submit', async (event) => {
     }
 
     
-statusBox.innerHTML =
-  '<div class="success-animation">' +
-    '<div class="success-check" aria-hidden="true">✓</div>' +
-    '<div class="success-title">Enquiry Submitted!</div>' +
-    '<p>Thank you! Your enquiry has been submitted successfully.</p>' +
-    '<p>Want to send the same details on WhatsApp too?</p>' +
-    '<a href="' + whatsappUrl +
-    '" target="_blank" rel="noopener">Send on WhatsApp →</a>' +
-  '</div>';
+
+form.classList.add('hidden');
+document.querySelector('.intro').classList.add('hidden');
+
+successWhatsApp.href = whatsappUrl;
+successScreen.classList.add('show');
 
 submitBtn.textContent = '✓ Enquiry Submitted';
+    
     
   } catch (error) {
     statusBox.innerHTML =
