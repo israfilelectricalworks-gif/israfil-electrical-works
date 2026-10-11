@@ -59,11 +59,20 @@ form {
   border-radius: 22px;
   background: linear-gradient(150deg,#102e4a,#0a2137);
 }
-.grid {
+  .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
+ .form-logo {
+  display: block;
+  width: 110px;
+  max-width: 40%;
+  height: auto;
+  margin: 0 auto 22px;
+  object-fit: contain;
+}
+  
 .field { display: flex; flex-direction: column; gap: 6px; }
 .wide { grid-column: 1 / -1; }
 label { font-size: 14px; font-weight: 750; }
@@ -129,9 +138,16 @@ textarea { min-height: 105px; resize: vertical; }
     <p>Share your project requirement and we will get in touch.</p>
   </div>
 
-  <form id="enquiryForm">
-    <div class="grid">
+  
+<form id="enquiryForm">
+    <img
+      src="/asset/logo.png"
+      alt="Israfil Electrical Works Logo"
+      class="form-logo"
+    >
 
+    <div class="grid">
+      
       <div class="field">
         <label for="name">Customer Name <span class="req">*</span></label>
         <input id="name" name="Customer Name"
