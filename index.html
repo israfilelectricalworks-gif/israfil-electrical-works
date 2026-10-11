@@ -282,7 +282,87 @@ footer{padding:28px 0;border-top:1px solid var(--line);color:#91a5b8;font-size:1
   .all-products-grid{
     grid-template-columns:1fr;
   }
-    }</style>
+    }
+/* 3D Cube Game Styling */
+.cube-game-section {
+  padding: 60px 0;
+  background: linear-gradient(135deg, #08192d, #102d49);
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+
+.cube-game-layout {
+  display: grid;
+  grid-template-columns: 1.1fr .9fr;
+  gap: 24px;
+  align-items: center;
+  margin-top: 25px;
+}
+
+.cube-game-stage {
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 20px;
+  background: #08192d;
+}
+
+#cubeGameCanvas {
+  display: block;
+  width: 100%;
+  height: 380px;
+  touch-action: pan-y;
+}
+
+.cube-game-panel {
+  padding: 22px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 20px;
+  background: rgba(255,255,255,.04);
+}
+
+.cube-game-panel p {
+  color: #afc0d0;
+  line-height: 1.6;
+}
+
+.cube-game-controls {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.cube-game-controls button,
+.cube-game-actions button {
+  padding: 11px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 9px;
+  background: #102d49;
+  color: white;
+  font-weight: bold;
+}
+
+.cube-game-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.cube-game-meta {
+  color: #f2b72d;
+  margin: 15px 0;
+}
+
+@media (max-width: 760px) {
+  .cube-game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  #cubeGameCanvas {
+    height: 320px;
+  }
+}
+  
+</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="ticker"><div class="ticker-track"><span>⚡ INDUSTRIAL & COMMERCIAL ELECTRICAL CONTRACTOR • COMPLETE ELECTRICAL SOLUTION • POWERING INDUSTRY WITH SMART ELECTRICAL SOLUTIONS• RELIABLE PRODUCTS • PROFESSIONAL INSTALLATION • SAFE & EFFICIENT POWER DISTRIBUTION • PANELS • AUTOMATION • PROTECTION • TESTING • COMMISSIONING • MAINTENANCE • BUILT FOR INDUSTRIAL & COMMERCIAL NEEDS • YOUR ELECTRICAL PARTNER • </span><span>⚡ INDUSTRIAL & COMMERCIAL ELECTRICAL CONTRACTOR • COMPLETE ELECTRICAL SOLUTION • ⚡ POWERING INDUSTRY WITH SMART ELECTRICAL SOLUTIONS • RELIABLE PRODUCTS • PROFESSIONAL INSTALLATION • SAFE & EFFICIENT POWER DISTRIBUTION • PANELS • AUTOMATION • PROTECTION • TESTING • COMMISSIONING • MAINTENANCE • BUILT FOR INDUSTRIAL & COMMERCIAL NEEDS • YOUR ELECTRICAL PARTNER • </span></div></div></div></div>
@@ -293,6 +373,7 @@ footer{padding:28px 0;border-top:1px solid var(--line);color:#91a5b8;font-size:1
 <a href="#home">Home</a>
 <a href="#about">About</a>
 <a href="#services">Services</a>
+<a href="#cube-game">Game</a>
 <a href="#products">Products</a>
 <a href="#locations">Locations</a>
 <a href="#why">Why Us</a>
@@ -731,7 +812,61 @@ See All Products <span>↓</span>
 </div>
 
 </section>
-<section id="locations"><div class="wrap"><div class="head"><div><div class="eyebrow">Locations</div><h2>Service Locations</h2></div><p>Professional site-based electrical work across Noida, NCR and nearby regions.</p></div>
+
+<section id="cube-game" class="cube-game-section">
+  <div class="wrap">
+    <div class="head">
+      <div>
+        <div class="eyebrow">TAKE A QUICK BREAK</div>
+        <h2>Interactive 3D Cube Challenge</h2>
+      </div>
+      <p>Rotate the cube and challenge yourself.</p>
+    </div>
+
+    <div class="cube-game-layout">
+      <div class="cube-game-stage">
+        <canvas id="cubeGameCanvas"
+          aria-label="Interactive 3D Rubik's Cube">
+        </canvas>
+      </div>
+
+      <div class="cube-game-panel">
+        <h3>Rubik's Cube</h3>
+        <p>Drag the cube to change its viewing angle.
+        Use the buttons to turn each face.</p>
+
+        <div class="cube-game-meta">
+          Status: <strong id="cubeGameStatus">Loading...</strong>
+          <br />
+          Moves: <strong id="cubeMoveCount">0</strong>
+        </div>
+
+        <div class="cube-game-controls">
+          <button data-cube-move="U">U</button>
+          <button data-cube-move="U'">U′</button>
+          <button data-cube-move="R">R</button>
+          <button data-cube-move="R'">R′</button>
+          <button data-cube-move="F">F</button>
+          <button data-cube-move="F'">F′</button>
+          <button data-cube-move="D">D</button>
+          <button data-cube-move="D'">D′</button>
+          <button data-cube-move="L">L</button>
+          <button data-cube-move="L'">L′</button>
+          <button data-cube-move="B">B</button>
+          <button data-cube-move="B'">B′</button>
+        </div>
+
+        <div class="cube-game-actions">
+          <button id="cubeScramble">Scramble Cube</button>
+          <button id="cubeReset">Reset Cube</button>
+          <button id="cubeShuffleView">Change View</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+  
+  <section id="locations"><div class="wrap"><div class="head"><div><div class="eyebrow">Locations</div><h2>Service Locations</h2></div><p>Professional site-based electrical work across Noida, NCR and nearby regions.</p></div>
 <div class="location-groups"><div><h3 style="margin:0 0 12px;color:#fff">Service Locations</h3><div class="chip-grid"><span class="chip">Noida</span><span class="chip">Greater Noida</span><span class="chip">Dadri</span><span class="chip">Ghaziabad</span><span class="chip">Loni</span><span class="chip">Muradnagar</span><span class="chip">Modinagar</span><span class="chip">Meerut</span><span class="chip">Hapur</span><span class="chip">Bulandshahr</span><span class="chip">Sikandrabad</span><span class="chip">Khurja</span><span class="chip">Jewar</span><span class="chip">Delhi</span><span class="chip">Faridabad</span><span class="chip">Ballabhgarh</span><span class="chip">Gurugram</span><span class="chip">Manesar</span><span class="chip">Bahadurgarh</span><span class="chip">Sonipat</span></div></div>
 <div><h3 style="margin:0 0 12px;color:var(--gold2)">Nearby Regions</h3><div class="chip-grid"><span class="chip near">Delhi NCR</span><span class="chip near">Gautam Buddh Nagar</span><span class="chip near">Ghaziabad Region</span><span class="chip near">Meerut Region</span><span class="chip near">Hapur Region</span><span class="chip near">Bulandshahr Region</span><span class="chip near">Faridabad Region</span><span class="chip near">Gurugram Region</span><span class="chip near">Sonipat Region</span><span class="chip near">NCR Industrial Belt</span></div></div></div></div></section>
 
@@ -1203,5 +1338,6 @@ if (stats) {
 
 })();
 </script>
+<script type="module" src="/cube-game.js"></script>
 </body>
 </html>
