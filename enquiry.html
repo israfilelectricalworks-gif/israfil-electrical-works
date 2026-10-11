@@ -123,6 +123,64 @@ textarea { min-height: 105px; resize: vertical; }
 }
 .submit:disabled { opacity: .6; }
 .status { margin-top: 14px; font-size: 14px; }
+ 
+.success-animation {
+  text-align: center;
+  padding: 22px 12px;
+  margin-top: 16px;
+  border: 1px solid rgba(255, 216, 106, .45);
+  border-radius: 16px;
+  background: rgba(255, 216, 106, .08);
+  animation: successFadeIn .5s ease-out both;
+}
+
+.success-check {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  background: #20c878;
+  color: #fff;
+  font-size: 42px;
+  line-height: 70px;
+  font-weight: 900;
+  animation: successPop .45s ease-out both;
+}
+
+.success-title {
+  color: var(--gold);
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.success-animation p {
+  margin: 6px 0 14px;
+  color: var(--muted);
+}
+
+.success-animation a {
+  color: var(--gold);
+  font-weight: 800;
+}
+
+@keyframes successPop {
+  0% { transform: scale(.2); opacity: 0; }
+  70% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes successFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .success-animation,
+  .success-check {
+    animation: none;
+  }
+}
+  
 .status a, .foot a { color: var(--gold); }
 .fine, .foot {
   text-align: center;
@@ -416,14 +474,19 @@ form.addEventListener('submit', async (event) => {
       throw new Error('Email not confirmed');
     }
 
-    statusBox.innerHTML =
-      'Email request submitted. Tap <a href="' + whatsappUrl +
-      '" target="_blank" rel="noopener">Send enquiry on WhatsApp</a> ' +
-      'to send the same details. First-time use may require you to ' +
-      'activate the email service from the verification email.';
+    
+statusBox.innerHTML =
+  '<div class="success-animation">' +
+    '<div class="success-check" aria-hidden="true">✓</div>' +
+    '<div class="success-title">Enquiry Submitted!</div>' +
+    '<p>Thank you! Your enquiry has been submitted successfully.</p>' +
+    '<p>Want to send the same details on WhatsApp too?</p>' +
+    '<a href="' + whatsappUrl +
+    '" target="_blank" rel="noopener">Send on WhatsApp →</a>' +
+  '</div>';
 
-    submitBtn.textContent = 'Email Request Submitted';
-
+submitBtn.textContent = '✓ Enquiry Submitted';
+    
   } catch (error) {
     statusBox.innerHTML =
       'Email delivery is not confirmed yet. Tap <a href="' +
