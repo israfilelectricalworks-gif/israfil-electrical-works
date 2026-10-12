@@ -360,6 +360,23 @@ textarea { min-height: 105px; resize: vertical; }
         </select>
       </div>
       
+<div class="field">
+  <label for="pincode">PIN Code <span class="req">*</span></label>
+  <input
+    id="pincode"
+    name="PIN Code"
+    type="text"
+    inputmode="numeric"
+    autocomplete="postal-code"
+    placeholder="6-digit PIN Code"
+    pattern="[1-9][0-9]{5}"
+    title="Enter a valid 6-digit PIN Code"
+    minlength="6"
+    maxlength="6"
+    required
+  >
+</div>
+      
       <div class="field wide">
         <label for="service">Required Service <span class="req">*</span></label>
         <select id="service" name="Required Service" required>
@@ -554,6 +571,7 @@ form.addEventListener('submit', async (event) => {
     'State: ' + v['State'],
     'District: ' + v['District'],
     'Location: ' + v['Project Location'],
+    'PIN Code: ' + v['PIN Code'],
     'Service: ' + v['Required Service'] +
       (v['Other Service Details'] ? ' — ' + v['Other Service Details'] : ''),
     'Budget: ' + (v['Estimated Budget'] || 'Not provided'),
