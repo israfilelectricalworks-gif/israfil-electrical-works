@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Israfil Electrical Works | Industrial & Commercial Electrical Contractor</title>
 <meta name="google-site-verification" content="gNmIiWHSx5Mp4OAPSP1bjieIDMR1rLP87XK_sNSaJG0" />
 <meta name="description" content="Israfil Electrical Works — Industrial & Commercial Electrical Contractor for transformer, LT/HT panel, cable laying, earthing, lightning protection, commissioning, testing and AMC across Noida, Greater Noida, Delhi and nearby NCR regions.">
@@ -23,6 +23,32 @@
 header{position:sticky;top:0;z-index:90;background:rgba(8,25,45,.96);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}.nav{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:18px}
 .brand-logo{width:58px;height:58px;object-fit:cover;border-radius:14px;background:#000;box-shadow:0 8px 24px rgba(0,0,0,.25)}.brand-text{font-weight:900;letter-spacing:.6px;line-height:1.2}.brand-text small{display:block;color:var(--gold2);font-size:10px;letter-spacing:1.5px;margin-top:3px}
 .brand{display:flex;align-items:center;gap:12px}.navlinks{display:flex;gap:21px;font-size:14px;color:#d8e2ea}.navlinks a:hover{color:var(--gold2)}.actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Desktop active menu underline */
+@media (min-width: 901px) {
+  .navlinks a {
+    position: relative;
+    padding: 10px 0;
+  }
+
+  .navlinks a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 2px;
+    height: 2px;
+    background: var(--gold2);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+
+  .navlinks a.active::after {
+    transform: scaleX(1);
+  }
+}
+  
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;padding:12px 16px;font-size:14px;font-weight:800;border:1px solid transparent;transition:.2s}.gold{background:var(--gold);color:#08192d}.dark{background:#102b46;border-color:rgba(255,255,255,.14);color:#fff}.green{background:var(--green);color:#06200f}.btn:hover{transform:translateY(-1px)}
 .hero{padding:22px 0 0;background:linear-gradient(180deg,#0a223a,#08192d)}.hero-frame{border:1px solid rgba(255,255,255,.12);border-radius:22px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.25)}.hero-frame img{width:100%;height:auto}
 .hero-buttons{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;padding:18px 0 22px}
@@ -527,6 +553,46 @@ canvas {
   window.addEventListener('resize', function () {
     if (window.innerWidth > 900) closeMenu();
   });
+})();
+</script>
+ 
+<script>
+(function () {
+  const links = document.querySelectorAll(
+    '.navlinks a[href^="#"]'
+  );
+
+  const sections = Array.from(links)
+    .map(link => document.querySelector(link.getAttribute('href')))
+    .filter(Boolean);
+
+  function setActive(id) {
+    links.forEach(link => {
+      link.classList.toggle(
+        'active',
+        link.getAttribute('href') === '#' + id
+      );
+    });
+  }
+
+  function updateActiveMenu() {
+    let current = 'home';
+
+    sections.forEach(section => {
+      if (section.getBoundingClientRect().top <= 160) {
+        current = section.id;
+      }
+    });
+
+    setActive(current);
+  }
+
+  window.addEventListener('scroll', updateActiveMenu, {
+    passive: true
+  });
+
+  window.addEventListener('load', updateActiveMenu);
+  updateActiveMenu();
 })();
 </script>
   
