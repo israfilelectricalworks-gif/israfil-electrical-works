@@ -39,6 +39,11 @@ footer{padding:28px 0;border-top:1px solid var(--line);color:#91a5b8;font-size:1
 @media(max-width:900px){.navlinks{display:none}.grid{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.about,.contact{grid-template-columns:1fr}}
 
 /* Mobile dropdown menu */
+  
+.mobile-enquiry-link {
+  display: none;
+}
+  
 .mobile-menu-btn {
   display: none;
   background: #102b46;
@@ -61,26 +66,53 @@ footer{padding:28px 0;border-top:1px solid var(--line);color:#91a5b8;font-size:1
     margin-left: auto;
   }
 
-  .navlinks.mobile-open {
+  .navlinks {
     display: flex;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
     position: absolute;
-    top: 100%;
+    top: calc(100% + 8px);
     right: 0;
     flex-direction: column;
     gap: 0;
-    width: 220px;
+    width: 240px;
     padding: 8px 14px;
     background: #0c2239;
     border: 1px solid rgba(255,255,255,.15);
     border-radius: 12px;
     box-shadow: 0 12px 30px rgba(0,0,0,.35);
     z-index: 100;
+    transform: translateY(-12px) scale(.97);
+    transform-origin: top right;
+    transition: opacity .25s ease, transform .25s ease, visibility .25s ease;
   }
 
-  .navlinks.mobile-open a {
+  .navlinks.mobile-open {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+
+  .navlinks a {
     padding: 10px 6px;
     border-bottom: 1px solid rgba(255,255,255,.08);
   }
+
+  .navlinks .mobile-enquiry-link {
+    display: block;
+    margin-top: 8px;
+    padding: 12px;
+    text-align: center;
+    border-radius: 8px;
+    background: var(--gold);
+    color: var(--navy);
+    font-weight: 900;
+  }
+}
+  
+  
 }
   
 @media(max-width:620px){.top .wrap span:first-child{display:none}.top .wrap{justify-content:center}.actions .dark{display:none}.hero-buttons .btn{width:100%}.head{display:block}.head p{margin-top:12px}.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.gbp-box{flex-direction:column;align-items:flex-start}.foot{flex-direction:column}.brand-logo{width:52px;height:52px}.brand-text{font-size:14px}}
@@ -424,26 +456,66 @@ footer{padding:28px 0;border-top:1px solid var(--line);color:#91a5b8;font-size:1
 <a href="#locations">Locations</a>
 <a href="#why">Why Us</a>
 <a href="#contact">Contact</a>
+<a href="/enquiry.html" class="mobile-enquiry-link">Get Enquiry</a>
 </nav>
+
 
 <button
   class="mobile-menu-btn"
+  id="mobileMenuBtn"
   type="button"
   aria-label="Open navigation menu"
   aria-expanded="false"
-  onclick="
-    const menu = document.querySelector('.navlinks');
-    menu.classList.toggle('mobile-open');
-    this.setAttribute(
-      'aria-expanded',
-      menu.classList.contains('mobile-open')
-    );
-  "
 >☰</button>
+  
   
 
 </div></header>
 
+<script>
+(function () {
+  const menu = document.querySelector('.navlinks');
+  const menuBtn = document.getElementById('mobileMenuBtn');
+
+  if (!menu || !menuBtn) return;
+
+  function closeMenu() {
+    menu.classList.remove('mobile-open');
+    menuBtn.setAttribute('aria-expanded', 'false');
+    menuBtn.setAttribute('aria-label', 'Open navigation menu');
+    menuBtn.textContent = '☰';
+  }
+
+  menuBtn.addEventListener('click', function () {
+    const isOpen = menu.classList.toggle('mobile-open');
+
+    menuBtn.setAttribute('aria-expanded', String(isOpen));
+    menuBtn.setAttribute(
+      'aria-label',
+      isOpen ? 'Close navigation menu' : 'Open navigation menu'
+    );
+    menuBtn.textContent = isOpen ? '✕' : '☰';
+  });
+
+  menu.querySelectorAll('a').forEach(function (link) {
+    link.addEventListener('click', closeMenu);
+  });
+
+  document.addEventListener('click', function (event) {
+    if (
+      !menu.contains(event.target) &&
+      !menuBtn.contains(event.target)
+    ) {
+      closeMenu();
+    }
+  });
+
+  window.addEventListener('resize', function () {
+    if (window.innerWidth > 900) closeMenu();
+  });
+})();
+</script>
+  
 <main id="home">
 <section class="hero"><div class="wrap"><div class="hero-frame"><img src="asset/hero-banner.webp" alt="Israfil Electrical Works industrial and commercial electrical services banner"></div>
 <div class="hero-buttons">
