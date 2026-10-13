@@ -37,6 +37,52 @@ header{position:sticky;top:0;z-index:90;background:rgba(8,25,45,.96);backdrop-fi
 .review{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}.stars{color:var(--gold2);font-size:30px;letter-spacing:3px}
 footer{padding:28px 0;border-top:1px solid var(--line);color:#91a5b8;font-size:13px}.foot{display:flex;justify-content:space-between;gap:18px}.float{position:fixed;right:18px;bottom:18px;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#06200f;font-size:26px;font-weight:900;z-index:100;box-shadow:0 16px 35px rgba(37,211,102,.27)}
 @media(max-width:900px){.navlinks{display:none}.grid{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.about,.contact{grid-template-columns:1fr}}
+
+/* Mobile dropdown menu */
+.mobile-menu-btn {
+  display: none;
+  background: #102b46;
+  color: #ffd86a;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 10px;
+  padding: 9px 13px;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+@media (max-width: 900px) {
+  .nav {
+    position: relative;
+  }
+
+  .mobile-menu-btn {
+    display: block;
+    margin-left: auto;
+  }
+
+  .navlinks.mobile-open {
+    display: flex;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    flex-direction: column;
+    gap: 0;
+    width: 220px;
+    padding: 8px 14px;
+    background: #0c2239;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.35);
+    z-index: 100;
+  }
+
+  .navlinks.mobile-open a {
+    padding: 10px 6px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+}
+  
 @media(max-width:620px){.top .wrap span:first-child{display:none}.top .wrap{justify-content:center}.actions .dark{display:none}.hero-buttons .btn{width:100%}.head{display:block}.head p{margin-top:12px}.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.gbp-box{flex-direction:column;align-items:flex-start}.foot{flex-direction:column}.brand-logo{width:52px;height:52px}.brand-text{font-size:14px}}
 .ticker{width:100%;overflow:hidden;white-space:nowrap}
 .ticker-track{display:inline-flex;min-width:max-content;animation:tickerMove 25s linear infinite}
@@ -379,6 +425,21 @@ footer{padding:28px 0;border-top:1px solid var(--line);color:#91a5b8;font-size:1
 <a href="#why">Why Us</a>
 <a href="#contact">Contact</a>
 </nav>
+
+<button
+  class="mobile-menu-btn"
+  type="button"
+  aria-label="Open navigation menu"
+  aria-expanded="false"
+  onclick="
+    const menu = document.querySelector('.navlinks');
+    menu.classList.toggle('mobile-open');
+    this.setAttribute(
+      'aria-expanded',
+      menu.classList.contains('mobile-open')
+    );
+  "
+>☰</button>
   
 
 </div></header>
