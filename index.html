@@ -564,10 +564,10 @@ canvas {
 })();
 </script>
  
+
 <script>
 (function () {
   const menu = document.querySelector('.navlinks');
-
   if (!menu) return;
 
   const links = Array.from(
@@ -613,9 +613,13 @@ canvas {
 
   function updateActiveMenu() {
     let current = 'home';
+    let bestTop = -Infinity;
 
     sections.forEach(section => {
-      if (section.getBoundingClientRect().top <= 160) {
+      const top = section.getBoundingClientRect().top;
+
+      if (top <= 160 && top > bestTop) {
+        bestTop = top;
         current = section.id;
       }
     });
@@ -640,6 +644,7 @@ canvas {
   updateActiveMenu();
 })();
 </script>
+  
 <main id="home">
 <section class="hero"><div class="wrap"><div class="hero-frame"><img src="asset/hero-banner.webp" alt="Israfil Electrical Works industrial and commercial electrical services banner"></div>
 <div class="hero-buttons">
