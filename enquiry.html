@@ -607,6 +607,31 @@ form.addEventListener('submit', async (event) => {
 
     
 
+    // Send enquiry fields to Google Sheets
+    try {
+      const sheetsData = new URLSearchParams();
+
+      Object.entries(v).forEach(([key, value]) => {
+        if (key !== "_subject" && key !== "_template") {
+          sheetsData.append(key, String(value ?? ""));
+        }
+      });
+
+      await fetch(
+        "https://script.google.com/macros/s/AKfycbxz73JSkQH5o-A5rQ7skfrWKLt7jVdoMfN9tyfr8w9ji0KUdr7JLh5y01kxd4aDr2Ql/exec",
+        {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+          },
+          body: sheetsData.toString()
+        }
+      );
+    } catch (sheetsError) {
+      console.error("Google Sheets request failed:", sheetsError);
+    }
+    
 form.classList.add('hidden');
 document.querySelector('.intro').classList.add('hidden');
 
