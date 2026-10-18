@@ -1,0 +1,593 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Israfil Electrical Works | Admin Panel</title>
+<style>
+:root{
+  --purple:#A05AFF;
+  --turquoise:#1BCFB4;
+  --sky-blue:#4BCBEB;
+  --coral-pink:#FE9496;
+  --support-purple:#9E58FF;
+  --bg:#F5F0F7;
+  --line:#E8E1ED;
+  --text:#30243D;
+  --white:#FFFFFF;
+}
+*{box-sizing:border-box}
+body{margin:0;font:15px Arial,sans-serif;background:var(--bg);color:var(--text)}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer;border:0;border-radius:8px;padding:11px 15px;background:var(--purple);color:white}
+button:hover{opacity:.9}
+input,textarea,select{width:100%;padding:11px;border:1px solid #d9d0e2;border-radius:8px;background:white;color:var(--text)}
+label{display:block;margin:14px 0 6px;font-weight:bold;font-size:13px}
+.hidden{display:none!important}
+.muted{color:#81758C;font-size:13px}
+.login{min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(140deg,#A05AFF,#4BCBEB,#1BCFB4)}
+.login-card{width:100%;max-width:420px;background:white;padding:28px;border-radius:18px;box-shadow:0 15px 45px #30243d25}
+.logo-box{width:58px;height:58px;border-radius:15px;background:#A05AFF;display:grid;place-items:center;color:white;font-size:24px;font-weight:bold;overflow:hidden}
+.logo-box img{width:100%;height:100%;object-fit:contain}
+h1{font-size:25px;margin:16px 0 8px}
+h2{font-size:21px}
+.full{width:100%;margin-top:18px;background:var(--purple)}
+.notice{padding:12px;background:#f0e7ff;border-left:4px solid var(--purple);border-radius:8px;font-size:13px;margin:15px 0;line-height:1.5}
+.error{color:#b42318;margin-top:12px;font-size:13px}
+.app{min-height:100vh;display:grid;grid-template-columns:245px minmax(0,1fr)}
+.sidebar{background:white;border-right:1px solid var(--line);padding:18px 13px}
+.brand{display:flex;align-items:center;gap:11px;padding:8px 7px 22px;font-weight:bold}
+.brand img{width:44px;height:44px;object-fit:contain;border-radius:10px}
+.brand-name{line-height:1.4}
+.brand-name small{display:block;font-size:11px;color:#887c95;font-weight:normal}
+.nav-title{font-size:11px;color:#9b8da8;margin:14px 12px 8px;text-transform:uppercase;letter-spacing:1px}
+.nav button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;color:#685a76;margin:5px 0;padding:12px;border-radius:9px}
+.nav button.active,.nav button:hover{background:#f0e7ff;color:var(--purple)}
+.nav button.active{font-weight:bold}
+main{min-width:0}
+.topbar{background:white;border-bottom:3px solid var(--turquoise);padding:13px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:75px}
+.header-brand{display:flex;align-items:center;gap:12px;min-width:0}
+.header-logo{width:43px;height:43px;object-fit:contain;border-radius:9px}
+.header-titles{min-width:0}
+.header-titles strong{display:block;font-size:15px}
+#topTitle{margin-top:4px}
+.header-actions{display:flex;align-items:center;gap:10px}
+.content{padding:22px;max-width:1300px;margin:auto}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0}
+.card{position:relative;overflow:hidden;color:white;border-radius:13px;padding:22px;min-height:145px}
+.card:after{content:"";position:absolute;width:130px;height:130px;border-radius:50%;background:#ffffff25;right:-35px;top:-20px}
+.card.purple{background:linear-gradient(125deg,#A05AFF,#BD8AFF)}
+.card.turquoise{background:linear-gradient(125deg,#1BCFB4,#57DEC9)}
+.card.blue{background:linear-gradient(125deg,#4BCBEB,#3A9FE7)}
+.card.pink{background:linear-gradient(125deg,#FE9496,#FF7FAD)}
+.stat{font-size:30px;font-weight:bold;margin-top:18px}
+.panel{background:white;border:1px solid var(--line);border-radius:13px;padding:20px;margin-bottom:17px}
+.pagehead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+.pagehead h1{margin:0 0 6px}
+.gold{background:var(--turquoise);color:#173D38;font-weight:bold}
+.ghost{background:#F0E7FF;color:var(--purple)}
+.danger{background:#fee4e2;color:#b42318}
+.small{padding:7px 10px;font-size:12px;margin:2px}
+.toolbar{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
+.toolbar input{max-width:320px}
+.tablewrap{overflow:auto;background:white;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:600px}
+th,td{padding:13px;text-align:left;border-bottom:1px solid var(--line);font-size:13px}
+th{background:#FAF7FD;color:#695777}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.formgrid .span{grid-column:1/-1}
+.modalbg{position:fixed;inset:0;background:#21162e88;display:grid;place-items:center;padding:15px;z-index:5}
+.modal{background:white;border-radius:15px;padding:22px;width:100%;max-width:620px;max-height:90vh;overflow:auto}
+.modalactions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.mobile{display:none}
+.toast{position:fixed;bottom:20px;right:20px;background:#30243D;color:white;padding:13px 17px;border-radius:9px;max-width:90%;z-index:10;box-shadow:0 5px 20px #0002}
+.active-label{color:#079D83;font-weight:bold}
+.inactive-label{color:#C0525D;font-weight:bold}
+@media(max-width:800px){
+ .app{grid-template-columns:1fr}
+ .sidebar{display:none;position:fixed;inset:0 auto 0 0;width:260px;z-index:4;box-shadow:5px 0 30px #0002}
+ .sidebar.open{display:block}
+ .mobile{display:inline-block}
+ .content{padding:15px 11px}
+ .cards{grid-template-columns:1fr 1fr;gap:10px}
+ .card{padding:16px;min-height:125px}
+ .stat{font-size:25px}
+ .panel{padding:14px}
+ .topbar{padding:12px}
+ .header-logo{width:36px;height:36px}
+ .header-titles strong{font-size:13px}
+ .header-actions{gap:5px}
+ .formgrid{grid-template-columns:1fr}
+ .formgrid .span{grid-column:auto}
+}
+@media(max-width:430px){
+ .cards{grid-template-columns:1fr 1fr}
+ .header-titles strong{max-width:155px}
+ #userEmail{display:none}
+}
+</style>
+</head>
+<body>
+
+<section id="loginScreen" class="login">
+ <div class="login-card">
+  <div class="logo-box">
+   <img src="YOUR_LOGO_URL_HERE" alt="Israfil Electrical Works"
+        onerror="this.style.display='none';this.parentElement.textContent='IE'">
+  </div>
+  <h1>Welcome Back</h1>
+  <div class="muted">Israfil Electrical Works · Admin Panel</div>
+  <div class="notice">Sign in using your authorized administrator email and password.</div>
+  <form id="loginForm">
+   <label for="email">Email Address</label>
+   <input id="email" type="email" required autocomplete="username"
+          placeholder="Enter admin email">
+   <label for="password">Password</label>
+   <input id="password" type="password" required autocomplete="current-password"
+          placeholder="Enter password">
+   <button class="full" type="submit">Sign In →</button>
+  </form>
+  <div id="loginError" class="error"></div>
+  <p class="muted">Secure administrator access only.</p>
+ </div>
+</section>
+
+<section id="appScreen" class="app hidden">
+ <aside id="sidebar" class="sidebar">
+  <div class="brand">
+   <img src="YOUR_LOGO_URL_HERE" alt="Logo"
+        onerror="this.style.display='none'">
+   <div class="brand-name">Israfil Electrical Works
+    <small>Admin Workspace</small>
+   </div>
+  </div>
+  <div class="nav-title">Main Menu</div>
+  <nav class="nav">
+   <button class="active" data-page="overview">▦ Dashboard</button>
+   <button data-page="products">▣ Products</button>
+   <button data-page="services">⚡ Services</button>
+   <button data-page="locations">⌖ Service Locations</button>
+   <button data-page="content">▤ Site Content</button>
+   <button data-page="settings">⚙ Settings</button>
+  </nav>
+  <div class="notice">Manage your website content from one place.</div>
+ </aside>
+
+ <main>
+  <header class="topbar">
+   <div class="header-brand">
+    <button id="menuBtn" class="ghost mobile" type="button">☰</button>
+    <img src="YOUR_LOGO_URL_HERE" alt="Israfil Electrical Works Logo"
+         class="header-logo" onerror="this.style.display='none'">
+    <div class="header-titles">
+     <strong>Israfil Electrical Works</strong>
+     <div id="topTitle" class="muted">Dashboard</div>
+    </div>
+   </div>
+   <div class="header-actions">
+    <span id="userEmail" class="muted"></span>
+    <button id="logoutBtn" class="ghost small" type="button">Sign Out</button>
+   </div>
+  </header>
+  <div id="content" class="content"></div>
+ </main>
+</section>
+
+<div id="modalRoot"></div>
+<div id="toast" class="toast hidden"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ========== SUPABASE CONFIGURATION ========== */
+const SUPABASE_URL = 'https://xkgkegsjutozmyxdarns.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE';
+const ADMIN_EMAIL = 'israfilelectricalworks@gmail.com';
+
+/* ========== APPLICATION ========== */
+const $ = s => document.querySelector(s);
+let db = null;
+let currentUser = null;
+let currentPage = 'overview';
+let toastTimer = null;
+
+function escapeHTML(value) {
+ return String(value ?? '').replace(/[&<>"']/g, c => ({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+ })[c]);
+}
+
+function notify(message,error=false) {
+ const t=$('#toast');
+ t.textContent=message;
+ t.style.background=error?'#B42318':'#30243D';
+ t.classList.remove('hidden');
+ clearTimeout(toastTimer);
+ toastTimer=setTimeout(()=>t.classList.add('hidden'),3500);
+}
+
+function initClient() {
+ if(!window.supabase) throw new Error('Supabase library could not load.');
+ if(!SUPABASE_PUBLISHABLE_KEY ||
+    SUPABASE_PUBLISHABLE_KEY.includes('PASTE_')) {
+  throw new Error('Please add your Supabase publishable key in the code.');
+ }
+ if(!db) {
+  db=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{
+   auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+  });
+ }
+}
+
+function showLogin(message='') {
+ $('#loginScreen').classList.remove('hidden');
+ $('#appScreen').classList.add('hidden');
+ $('#loginError').textContent=message;
+}
+
+function showApp() {
+ $('#loginScreen').classList.add('hidden');
+ $('#appScreen').classList.remove('hidden');
+ $('#userEmail').textContent=currentUser?.email||'';
+}
+
+async function verifyAdmin(user) {
+ if(!user) return false;
+ const {data,error}=await db.auth.getUser();
+ if(error||!data.user) return false;
+ return data.user.email?.toLowerCase()===ADMIN_EMAIL.toLowerCase()
+     && data.user.app_metadata?.role==='admin';
+}
+
+async function login(event) {
+ event.preventDefault();
+ $('#loginError').textContent='';
+ try {
+  initClient();
+  const {data,error}=await db.auth.signInWithPassword({
+   email:$('#email').value.trim(),
+   password:$('#password').value
+  });
+  if(error) throw error;
+  if(!await verifyAdmin(data.user)) {
+   await db.auth.signOut();
+   throw new Error('Admin role not detected. Check your Supabase App Metadata.');
+  }
+  currentUser=data.user;
+  showApp();
+  await renderPage('overview');
+ } catch(e) {
+  $('#loginError').textContent=e.message||'Login failed.';
+ }
+}
+
+async function boot() {
+ try {
+  initClient();
+  const {data,error}=await db.auth.getSession();
+  if(error) throw error;
+  if(data.session && await verifyAdmin(data.session.user)) {
+   currentUser=data.session.user;
+   showApp();
+   await renderPage('overview');
+  } else {
+   showLogin();
+  }
+ } catch(e) {
+  showLogin(e.message);
+ }
+}
+
+$('#loginForm').addEventListener('submit',login);
+
+$('#logoutBtn').addEventListener('click',async()=>{
+ if(db) await db.auth.signOut();
+ currentUser=null;
+ showLogin();
+});
+
+$('#menuBtn').addEventListener('click',()=>{
+ $('#sidebar').classList.toggle('open');
+});
+
+document.querySelectorAll('[data-page]').forEach(button=>{
+ button.addEventListener('click',()=>{
+  renderPage(button.dataset.page);
+  $('#sidebar').classList.remove('open');
+ });
+});
+
+/* ========== DATABASE TABLES ========== */
+const configs={
+ products:{
+  title:'Products',table:'products',
+  fields:[
+   ['title','Product Title','text',true],
+   ['category','Category','text',false],
+   ['image_url','Image URL','url',false],
+   ['description','Description','textarea',false],
+   ['sort_order','Sort Order','number',false],
+   ['is_active','Active','checkbox',false]
+  ],
+  columns:['title','category','is_active','sort_order']
+ },
+ services:{
+  title:'Services',table:'services',
+  fields:[
+   ['title','Service Title','text',true],
+   ['description','Description','textarea',false],
+   ['sort_order','Sort Order','number',false],
+   ['is_active','Active','checkbox',false]
+  ],
+  columns:['title','is_active','sort_order']
+ },
+ locations:{
+  title:'Service Locations',table:'service_locations',
+  fields:[
+   ['name','Location Name','text',true],
+   ['state','State','text',true],
+   ['district','District','text',true],
+   ['sort_order','Sort Order','number',false],
+   ['is_active','Active','checkbox',false]
+  ],
+  columns:['name','state','district','is_active','sort_order']
+ }
+};
+
+async function renderPage(page) {
+ currentPage=page;
+ const titles={
+  overview:'Dashboard',products:'Products',services:'Services',
+  locations:'Service Locations',content:'Site Content',settings:'Settings'
+ };
+ $('#topTitle').textContent=titles[page]||page;
+ document.querySelectorAll('[data-page]').forEach(b=>{
+  b.classList.toggle('active',b.dataset.page===page);
+ });
+ const host=$('#content');
+ host.innerHTML='<div class="panel">Loading data…</div>';
+ try {
+  if(page==='overview') await overview(host);
+  else if(configs[page]) await listing(host,page);
+  else if(page==='content') await contentPage(host);
+  else if(page==='settings') settingsPage(host);
+ } catch(e) {
+  host.innerHTML=`<div class="panel"><h3>Unable to load data</h3>
+   <p class="error">${escapeHTML(e.message)}</p>
+   <button onclick="renderPage(currentPage)">Try Again</button></div>`;
+ }
+}
+
+/* ========== DASHBOARD ========== */
+async function count(table) {
+ const {count,error}=await db.from(table).select('*',{count:'exact',head:true});
+ if(error) throw error;
+ return count||0;
+}
+
+async function overview(host) {
+ const [products,services,locations]=await Promise.all([
+  count('products'),count('services'),count('service_locations')
+ ]);
+ host.innerHTML=`
+  <div class="pagehead">
+   <div><h1>Dashboard Overview</h1>
+   <div class="muted">Welcome to your business management dashboard.</div></div>
+  </div>
+  <div class="cards">
+   <div class="card purple"><div>Products</div><div class="stat">${products}</div><div>Product records</div></div>
+   <div class="card turquoise"><div>Services</div><div class="stat">${services}</div><div>Service records</div></div>
+   <div class="card blue"><div>Locations</div><div class="stat">${locations}</div><div>Service areas</div></div>
+  </div>
+  <div class="panel">
+   <h2>Quick Actions</h2>
+   <button class="gold" onclick="renderPage('products')">Manage Products</button>
+   <button onclick="renderPage('services')">Manage Services</button>
+   <button style="background:#4BCBEB;color:#18384A" onclick="renderPage('locations')">Manage Locations</button>
+   <button class="ghost" onclick="renderPage('content')">Edit Site Content</button>
+  </div>
+  <div class="panel">
+   <h3>Website Management</h3>
+   <p class="muted">This panel manages data stored in Supabase. Existing website pages must also be connected to these tables before changes appear on the public website.</p>
+  </div>`;
+}
+
+/* ========== LISTS ========== */
+async function listing(host,key) {
+ const config=configs[key];
+ const {data,error}=await db.from(config.table).select('*')
+  .order('sort_order',{ascending:true}).limit(500);
+ if(error) throw error;
+ const rows=data||[];
+ host.innerHTML=`
+  <div class="pagehead">
+   <div><h1>${config.title}</h1><div class="muted">Add, edit and manage records.</div></div>
+   <button class="gold" onclick="openEditor('${key}')">+ Add New</button>
+  </div>
+  <div class="toolbar">
+   <input id="filterInput" placeholder="Search records...">
+   <span class="muted">${rows.length} records</span>
+  </div>
+  <div class="tablewrap"><table>
+   <thead><tr>${config.columns.map(c=>`<th>${escapeHTML(c.replace(/_/g,' '))}</th>`).join('')}<th>Actions</th></tr></thead>
+   <tbody id="rowsBody">${rows.map(r=>rowHTML(config,r)).join('')}</tbody>
+  </table></div>
+  ${rows.length?'':'<div class="panel muted">No records yet. Tap Add New to create one.</div>'}`;
+ $('#filterInput').addEventListener('input',e=>{
+  const q=e.target.value.toLowerCase();
+  $('#rowsBody').innerHTML=rows.filter(r=>JSON.stringify(r).toLowerCase().includes(q))
+   .map(r=>rowHTML(config,r)).join('');
+ });
+}
+
+function rowHTML(config,row) {
+ return `<tr>${config.columns.map(c=>{
+  if(c==='is_active') return `<td><span class="${row[c]?'active-label':'inactive-label'}">${row[c]?'Active':'Inactive'}</span></td>`;
+  return `<td>${escapeHTML(row[c])}</td>`;
+ }).join('')}
+ <td>
+  <button class="ghost small" onclick="openEditor('${config.table}','${row.id}')">Edit</button>
+  <button class="danger small" onclick="toggleRecord('${config.table}','${row.id}',${!row.is_active})">${row.is_active?'Deactivate':'Activate'}</button>
+ </td></tr>`;
+}
+
+/* ========== ADD / EDIT ========== */
+async function openEditor(key,id) {
+ const config=configs[key];
+ if(!config) return;
+ let record={is_active:true,sort_order:0};
+ if(id) {
+  const {data,error}=await db.from(config.table).select('*').eq('id',id).single();
+  if(error) return notify(error.message,true);
+  record=data;
+ }
+ const fields=config.fields.map(([name,label,type,required])=>{
+  if(type==='checkbox') return `<label class="span"><input style="width:auto" name="${name}" type="checkbox" ${record[name]?'checked':''}> ${label}</label>`;
+  if(type==='textarea') return `<div class="span"><label>${label}</label><textarea name="${name}">${escapeHTML(record[name]??'')}</textarea></div>`;
+  return `<div><label>${label}${required?' *':''}</label><input name="${name}" type="${type}" value="${escapeHTML(record[name]??'')}" ${required?'required':''}></div>`;
+ }).join('');
+
+ $('#modalRoot').innerHTML=`
+  <div class="modalbg"><div class="modal">
+   <h2>${id?'Edit':'Add'} ${config.title}</h2>
+   <form id="recordForm"><div class="formgrid">${fields}</div>
+    <div class="modalactions">
+     <button type="button" class="ghost" onclick="closeModal()">Cancel</button>
+     <button class="gold" type="submit">Save Record</button>
+    </div>
+   </form>
+  </div></div>`;
+
+ $('#recordForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const form=e.target,fd=new FormData(form),payload={};
+  for(const [name,,type] of config.fields) {
+   if(type==='checkbox') payload[name]=form.elements[name].checked;
+   else if(type==='number') payload[name]=Number(fd.get(name)||0);
+   else payload[name]=String(fd.get(name)||'').trim()||null;
+  }
+  try {
+   const result=id
+    ? await db.from(config.table).update(payload).eq('id',id)
+    : await db.from(config.table).insert(payload);
+   if(result.error) throw result.error;
+   closeModal();
+   notify('Record saved successfully');
+   await renderPage(key);
+  } catch(error) {notify(error.message,true);}
+ });
+}
+
+async function toggleRecord(table,id,active) {
+ try {
+  const {error}=await db.from(table).update({is_active:active}).eq('id',id);
+  if(error) throw error;
+  notify('Record updated');
+  const key=table==='service_locations'?'locations':table;
+  await renderPage(key);
+ } catch(error) {notify(error.message,true);}
+}
+
+function closeModal() {$('#modalRoot').innerHTML='';}
+
+/* ========== SITE CONTENT ========== */
+async function contentPage(host) {
+ const {data,error}=await db.from('site_content').select('*').order('content_key');
+ if(error) throw error;
+ const rows=data||[];
+ host.innerHTML=`
+  <div class="pagehead">
+   <div><h1>Site Content</h1><div class="muted">Manage JSON content records.</div></div>
+   <button class="gold" onclick="openContentEditor()">+ Add Content</button>
+  </div>
+  <div class="tablewrap"><table>
+   <thead><tr><th>Content Key</th><th>Preview</th><th>Updated</th><th>Action</th></tr></thead>
+   <tbody>${rows.map(r=>`<tr>
+    <td>${escapeHTML(r.content_key)}</td>
+    <td>${escapeHTML(JSON.stringify(r.content).slice(0,90))}</td>
+    <td>${escapeHTML(r.updated_at)}</td>
+    <td><button class="ghost small" onclick="openContentEditor('${escapeHTML(r.content_key)}')">Edit</button></td>
+   </tr>`).join('')}</tbody>
+  </table></div>
+  <div class="notice">Saving content here will not automatically update the live website until its pages are connected to this table.</div>`;
+}
+
+async function openContentEditor(key='') {
+ let value={};
+ if(key) {
+  const {data,error}=await db.from('site_content').select('*').eq('content_key',key).single();
+  if(error) return notify(error.message,true);
+  value=data.content;
+ }
+ $('#modalRoot').innerHTML=`
+  <div class="modalbg"><div class="modal">
+   <h2>${key?'Edit':'Add'} Site Content</h2>
+   <form id="contentForm">
+    <label>Content Key</label>
+    <input name="content_key" required value="${escapeHTML(key)}" ${key?'readonly':''} placeholder="hero_banner">
+    <label>Content JSON</label>
+    <textarea name="content" required style="min-height:180px;font-family:monospace">${escapeHTML(JSON.stringify(value,null,2))}</textarea>
+    <div class="modalactions">
+     <button type="button" class="ghost" onclick="closeModal()">Cancel</button>
+     <button class="gold">Save Content</button>
+    </div>
+   </form>
+  </div></div>`;
+
+ $('#contentForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const fd=new FormData(e.target);
+  let json;
+  try {json=JSON.parse(fd.get('content'));}
+  catch{return notify('Invalid JSON format',true);}
+  const contentKey=String(fd.get('content_key')).trim();
+  const payload={content_key:contentKey,content:json,updated_by:currentUser.id,updated_at:new Date().toISOString()};
+  try {
+   const result=key
+    ? await db.from('site_content').update({
+       content:json,updated_by:currentUser.id,updated_at:payload.updated_at
+      }).eq('content_key',key)
+    : await db.from('site_content').insert(payload);
+   if(result.error) throw result.error;
+   closeModal();
+   notify('Content saved successfully');
+   await renderPage('content');
+  } catch(error) {notify(error.message,true);}
+ });
+}
+
+/* ========== SETTINGS ========== */
+function settingsPage(host) {
+ host.innerHTML=`
+  <div class="pagehead"><h1>Settings</h1></div>
+  <div class="panel">
+   <h2>Account</h2>
+   <p><b>Admin email:</b> ${escapeHTML(currentUser?.email)}</p>
+   <p><b>Admin role:</b> ${currentUser?.app_metadata?.role==='admin'?'Confirmed':'Not detected'}</p>
+  </div>
+  <div class="panel">
+   <h2>Supabase Connection</h2>
+   <p><b>Project URL:</b> ${escapeHTML(SUPABASE_URL)}</p>
+   <p><b>Publishable key:</b> ${SUPABASE_PUBLISHABLE_KEY.includes('PASTE_')?'Not configured':'Configured'}</p>
+   <div class="notice">Never put your Supabase secret or service-role key in this HTML file.</div>
+   <button class="ghost" onclick="refreshSession()">Refresh Session</button>
+  </div>
+  <div class="panel">
+   <h2>Brand Colours</h2>
+   <p>Purple: #A05AFF</p><p>Turquoise: #1BCFB4</p>
+   <p>Sky Blue: #4BCBEB</p><p>Coral Pink: #FE9496</p>
+  </div>`;
+}
+
+async function refreshSession() {
+ try {
+  const {error}=await db.auth.refreshSession();
+  if(error) throw error;
+  notify('Session refreshed');
+ } catch(e) {notify(e.message,true);}
+}
+
+boot();
+</script>
+</body>
+</html>
