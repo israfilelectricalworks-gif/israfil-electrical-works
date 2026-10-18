@@ -426,7 +426,7 @@ function rowHTML(config,row) {
   return `<td>${escapeHTML(row[c])}</td>`;
  }).join('')}
  <td>
-  <button class="ghost small" onclick="openEditor('${config.table}','${row.id}')">Edit</button>
+  <button class="ghost small" onclick="openEditor('${config.table === 'service_locations' ? 'locations' : config.table}','${row.id}')">Edit</button>
   <button class="danger small" onclick="toggleRecord('${config.table}','${row.id}',${!row.is_active})">${row.is_active?'Deactivate':'Activate'}</button>
  </td></tr>`;
 }
