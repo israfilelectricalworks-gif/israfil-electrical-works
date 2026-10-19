@@ -480,17 +480,6 @@ reportRows.forEach(row => {
   </div>
 </div>
     <div class="panel">
-      <h2>Quick Actions</h2>
-      <button class="gold" onclick="renderPage('products')">Manage Products</button>
-      <button onclick="renderPage('services')">Manage Services</button>
-      <button style="background:#4BCBEB;color:#18384A"
-        onclick="renderPage('locations')">Manage Locations</button>
-      <button class="ghost" onclick="renderPage('content')">Edit Site Content</button>
-      <button style="background:#FE9496;color:#54252A"
-        onclick="renderPage('enquiries')">Manage Enquiries</button>
-    </div>
-
-    <div class="panel">
       <div class="pagehead">
         <div>
           <h2 style="margin:0 0 6px">Latest Enquiries</h2>
@@ -541,14 +530,7 @@ reportRows.forEach(row => {
         : ''}
     </div>
 
-    <div class="panel">
-      <h3>Website Management</h3>
-      <p class="muted">
-        This panel manages data stored in Supabase. Existing website pages
-        must also be connected to these tables before changes appear
-        on the public website.
-      </p>
-    </div>
+    
   `;
 if (typeof Chart === 'undefined') {
   throw new Error('Chart.js load nahi hua. Internet connection check karein.');
