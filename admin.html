@@ -372,10 +372,12 @@ async function count(table) {
  return count||0;
 }
 
-async function overview(host) {
- const [products,services,locations]=await Promise.all([
-  count('products'),count('services'),count('service_locations')
- ]);
+const [products,services,locations,enquiries]=await Promise.all([
+  count('products'),
+  count('services'),
+  count('service_locations'),
+  count('enquiries')
+]);
  host.innerHTML=`
   <div class="pagehead">
    <div><h1>Dashboard Overview</h1>
@@ -385,6 +387,11 @@ async function overview(host) {
    <div class="card purple"><div>Products</div><div class="stat">${products}</div><div>Product records</div></div>
    <div class="card turquoise"><div>Services</div><div class="stat">${services}</div><div>Service records</div></div>
    <div class="card blue"><div>Locations</div><div class="stat">${locations}</div><div>Service areas</div></div>
+  <div class="card pink" onclick="renderPage('enquiries')" style="cursor:pointer">
+  <div>Total Enquiries</div>
+  <div class="stat">${enquiries}</div>
+  <div>View all enquiries →</div>
+</div>
   </div>
   <div class="panel">
    <h2>Quick Actions</h2>
@@ -393,6 +400,18 @@ async function overview(host) {
    <button style="background:#4BCBEB;color:#18384A" onclick="renderPage('locations')">Manage Locations</button>
    <button class="ghost" onclick="renderPage('content')">Edit Site Content</button>
   </div>
+  <div class="panel">
+  <div class="pagehead">
+    <div>
+      <h2 style="margin:0 0 6px">Latest Enquiries</h2>
+      <div class="muted">Recent customer enquiries</div>
+    </div>
+    ${enquiries > 10
+      ? '<button class="gold" onclick="renderPage(\'enquiries\')">See All Enquiries →</button>'
+      : ''}
+  </div>
+  <div id="dashboardEnquiries" class="muted">Loading enquiries...</div>
+</div>
   <div class="panel">
    <h3>Website Management</h3>
    <p class="muted">This panel manages data stored in Supabase. Existing website pages must also be connected to these tables before changes appear on the public website.</p>
