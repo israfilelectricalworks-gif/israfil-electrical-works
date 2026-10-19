@@ -294,6 +294,9 @@ textarea { min-height: 105px; resize: vertical; }
   .nav { align-items: center; }
 }
 </style>
+  </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
 </head>
 
 <body>
@@ -500,6 +503,10 @@ textarea { min-height: 105px; resize: vertical; }
 </div>
   
 <script>
+  const enquiryDB = window.supabase.createClient(
+  'https://xkgkegsjutozmyxdarns.supabase.co',
+  'sb_publishable_LlhBoPAZcnDX0rxvg7pJGQ_XIbvz5by'
+);
 const form = document.getElementById('enquiryForm');
 const service = document.getElementById('service');
 const otherWrap = document.getElementById('otherWrap');
@@ -602,6 +609,27 @@ form.addEventListener('submit', async (event) => {
   statusBox.textContent = 'Submitting email notification…';
 
   try {
+        const { error: dbError } = await enquiryDB
+      .from('enquiries')
+      .insert({
+        customer_name: v['Customer Name'],
+        mobile_number: v['Mobile Number'],
+        company_name: v['Company / Factory Name'] || null,
+        project_location: v['Project Location'],
+        state: v['State'],
+        district: v['District'],
+        pin_code: v['PIN Code'],
+        required_service: v['Required Service'],
+        other_service_details: v['Other Service Details'] || null,
+        estimated_budget: v['Estimated Budget'] || null,
+        work_timeline: v['Work Timeline'] || null,
+        customer_email: v['Customer Email'] || null,
+        project_details: v['Project Details'] || null
+      });
+
+    if (dbError) {
+      throw dbError;
+    }
     const response = await fetch(
       'https://formsubmit.co/ajax/israfilelectricalworks@gmail.com',
       {
