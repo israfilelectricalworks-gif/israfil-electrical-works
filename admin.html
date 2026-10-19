@@ -54,7 +54,7 @@ main{min-width:0}
 #topTitle{margin-top:4px}
 .header-actions{display:flex;align-items:center;gap:10px}
 .content{padding:22px;max-width:1300px;margin:auto}
-.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:20px 0}
 .card{position:relative;overflow:hidden;color:white;border-radius:13px;padding:22px;min-height:145px}
 .card:after{content:"";position:absolute;width:130px;height:130px;border-radius:50%;background:#ffffff25;right:-35px;top:-20px}
 .card.purple{background:linear-gradient(125deg,#A05AFF,#BD8AFF)}
@@ -372,51 +372,128 @@ async function count(table) {
  return count||0;
 }
 
-const [products,services,locations,enquiries]=await Promise.all([
-  count('products'),
-  count('services'),
-  count('service_locations'),
-  count('enquiries')
-]);
- host.innerHTML=`
-  <div class="pagehead">
-   <div><h1>Dashboard Overview</h1>
-   <div class="muted">Welcome to your business management dashboard.</div></div>
-  </div>
-  <div class="cards">
-   <div class="card purple"><div>Products</div><div class="stat">${products}</div><div>Product records</div></div>
-   <div class="card turquoise"><div>Services</div><div class="stat">${services}</div><div>Service records</div></div>
-   <div class="card blue"><div>Locations</div><div class="stat">${locations}</div><div>Service areas</div></div>
-  <div class="card pink" onclick="renderPage('enquiries')" style="cursor:pointer">
-  <div>Total Enquiries</div>
-  <div class="stat">${enquiries}</div>
-  <div>View all enquiries →</div>
-</div>
-  </div>
-  <div class="panel">
-   <h2>Quick Actions</h2>
-   <button class="gold" onclick="renderPage('products')">Manage Products</button>
-   <button onclick="renderPage('services')">Manage Services</button>
-   <button style="background:#4BCBEB;color:#18384A" onclick="renderPage('locations')">Manage Locations</button>
-   <button class="ghost" onclick="renderPage('content')">Edit Site Content</button>
-  </div>
-  <div class="panel">
-  <div class="pagehead">
-    <div>
-      <h2 style="margin:0 0 6px">Latest Enquiries</h2>
-      <div class="muted">Recent customer enquiries</div>
+
+async function overview(host) {
+  const [products, services, locations, enquiryCount, enquiryResult] =
+    await Promise.all([
+      count('products'),
+      count('services'),
+      count('service_locations'),
+      count('enquiries'),
+      db.from('enquiries')
+        .select('customer_name,mobile_number,project_location,state,district,required_service,status,created_at')
+        .order('created_at', { ascending: false })
+        .limit(10)
+    ]);
+
+  if (enquiryResult.error) throw enquiryResult.error;
+
+  const latestEnquiries = enquiryResult.data || [];
+
+  host.innerHTML = `
+    <div class="pagehead">
+      <div>
+        <h1>Dashboard Overview</h1>
+        <div class="muted">Welcome to your business management dashboard.</div>
+      </div>
     </div>
-    ${enquiries > 10
-      ? '<button class="gold" onclick="renderPage(\'enquiries\')">See All Enquiries →</button>'
-      : ''}
-  </div>
-  <div id="dashboardEnquiries" class="muted">Loading enquiries...</div>
-</div>
-  <div class="panel">
-   <h3>Website Management</h3>
-   <p class="muted">This panel manages data stored in Supabase. Existing website pages must also be connected to these tables before changes appear on the public website.</p>
-  </div>`;
+
+    <div class="cards">
+      <div class="card purple">
+        <div>Products</div>
+        <div class="stat">${products}</div>
+        <div>Product records</div>
+      </div>
+      <div class="card turquoise">
+        <div>Services</div>
+        <div class="stat">${services}</div>
+        <div>Service records</div>
+      </div>
+      <div class="card blue">
+        <div>Locations</div>
+        <div class="stat">${locations}</div>
+        <div>Service areas</div>
+      </div>
+      <div class="card pink" onclick="renderPage('enquiries')" style="cursor:pointer">
+        <div>Total Enquiries</div>
+        <div class="stat">${enquiryCount}</div>
+        <div>View all enquiries →</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Quick Actions</h2>
+      <button class="gold" onclick="renderPage('products')">Manage Products</button>
+      <button onclick="renderPage('services')">Manage Services</button>
+      <button style="background:#4BCBEB;color:#18384A"
+        onclick="renderPage('locations')">Manage Locations</button>
+      <button class="ghost" onclick="renderPage('content')">Edit Site Content</button>
+      <button style="background:#FE9496;color:#54252A"
+        onclick="renderPage('enquiries')">Manage Enquiries</button>
+    </div>
+
+    <div class="panel">
+      <div class="pagehead">
+        <div>
+          <h2 style="margin:0 0 6px">Latest Enquiries</h2>
+          <div class="muted">
+            Showing ${latestEnquiries.length} of ${enquiryCount} total enquiries
+          </div>
+        </div>
+        ${enquiryCount > 10
+          ? '<button class="gold" onclick="renderPage(\\'enquiries\\')">See All Enquiries →</button>'
+          : ''}
+      </div>
+
+      ${latestEnquiries.length ? `
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Mobile</th>
+                <th>Service</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${latestEnquiries.map(r => `
+                <tr>
+                  <td>${escapeHTML(r.customer_name)}</td>
+                  <td>${escapeHTML(r.mobile_number)}</td>
+                  <td>${escapeHTML(r.required_service)}</td>
+                  <td>${escapeHTML([
+                    r.project_location, r.district, r.state
+                  ].filter(Boolean).join(', '))}</td>
+                  <td>${escapeHTML(r.status || 'New')}</td>
+                  <td>${escapeHTML(r.created_at
+                    ? new Date(r.created_at).toLocaleDateString('en-IN')
+                    : '')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      ` : '<p class="muted">Abhi koi enquiry nahi aayi hai.</p>'}
+
+      ${enquiryCount > 10
+        ? '<button class="gold" style="margin-top:14px" onclick="renderPage(\\'enquiries\\')">See All Enquiries →</button>'
+        : ''}
+    </div>
+
+    <div class="panel">
+      <h3>Website Management</h3>
+      <p class="muted">
+        This panel manages data stored in Supabase. Existing website pages
+        must also be connected to these tables before changes appear
+        on the public website.
+      </p>
+    </div>
+  `;
 }
+  
 
 /* ========== LISTS ========== */
 async function listing(host,key) {
