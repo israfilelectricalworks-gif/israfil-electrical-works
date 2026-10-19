@@ -396,46 +396,89 @@ if (reportError) throw reportError;
 
 const reportRows = allEnquiries || [];
 
-const statusCounts = {
-  New: 0,
-  Contacted: 0,
-  'In Progress': 0,
-  Completed: 0,
-  Rejected: 0
-};
 
-reportRows.forEach(row => {
-  const status = row.status || 'New';
-  if (Object.prototype.hasOwnProperty.call(statusCounts, status)) {
-    statusCounts[status]++;
-  }
-});
+const reportRows = allEnquiries || [];
 
-const dailyCounts = {};
-for (let i = 6; i >= 0; i--) {
-  const date = new Date();
-  date.setDate(date.getDate() - i);
-  const key = [
+function reportDateKey(date) {
+  return [
     date.getFullYear(),
     String(date.getMonth() + 1).padStart(2, '0'),
     String(date.getDate()).padStart(2, '0')
   ].join('-');
-  dailyCounts[key] = 0;
 }
 
-reportRows.forEach(row => {
-  if (!row.created_at) return;
-  const date = new Date(row.created_at);
-  const key = [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0')
-  ].join('-');
+function getReportRange() {
+  const period = document.getElementById('reportPeriod').value;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  if (Object.prototype.hasOwnProperty.call(dailyCounts, key)) {
-    dailyCounts[key]++;
+  let from = new Date(today);
+  let toExclusive = new Date(today);
+  toExclusive.setDate(toExclusive.getDate() + 1);
+
+  if (period === 'custom') {
+    const fromValue = document.getElementById('reportFrom').value;
+    const toValue = document.getElementById('reportTo').value;
+
+    if (!fromValue || !toValue) {
+      alert('From Date aur To Date select karein.');
+      return null;
+    }
+
+    from = new Date(fromValue + 'T00:00:00');
+    toExclusive = new Date(toValue + 'T00:00:00');
+    toExclusive.setDate(toExclusive.getDate() + 1);
+
+    if (from >= toExclusive) {
+      alert('Valid date range select karein.');
+      return null;
+    }
+  } else {
+    from.setDate(from.getDate() - Number(period) + 1);
   }
-});
+
+  return { from, toExclusive };
+}
+
+function filterReportRows() {
+  const range = getReportRange();
+  if (!range) return null;
+
+  const filteredRows = reportRows.filter(row => {
+    if (!row.created_at) return false;
+    const date = new Date(row.created_at);
+    return date >= range.from && date < range.toExclusive;
+  });
+
+  const dailyCounts = {};
+  const cursor = new Date(range.from);
+
+  while (cursor < range.toExclusive) {
+    dailyCounts[reportDateKey(cursor)] = 0;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  const statusCounts = {
+    New: 0,
+    Contacted: 0,
+    'In Progress': 0,
+    Completed: 0,
+    Rejected: 0
+  };
+
+  filteredRows.forEach(row => {
+    const key = reportDateKey(new Date(row.created_at));
+    if (key in dailyCounts) dailyCounts[key]++;
+
+    const status = row.status || 'New';
+    if (Object.prototype.hasOwnProperty.call(statusCounts, status)) {
+      statusCounts[status]++;
+    }
+  });
+
+  return { dailyCounts, statusCounts, filteredRows, range };
+}
+  
   host.innerHTML = `
     <div class="pagehead">
       <div>
@@ -467,20 +510,45 @@ reportRows.forEach(row => {
       </div>
     </div>
 <div class="panel">
-  <h2>Enquiry Report — Last 7 Days</h2>
-  <div style="position:relative;height:260px">
-    <canvas id="enquiryTrendChart"></canvas>
+  
+<div class="panel">
+  <h2>Enquiry Report</h2>
+
+  <div class="toolbar" style="flex-wrap:wrap;gap:10px">
+    <select id="reportPeriod">
+      <option value="1">1 Day</option>
+      <option value="7" selected>7 Days</option>
+      <option value="30">1 Month</option>
+      <option value="custom">Custom Date</option>
+    </select>
+
+    <input type="date" id="reportFrom" style="display:none">
+    <input type="date" id="reportTo" style="display:none">
+
+    <button class="gold" id="applyReportFilter" style="display:none">
+      Apply Filter
+    </button>
+  </div>
+
+  <p id="reportDateLabel" class="muted">Last 7 Days</p>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px">
+    <div style="min-width:0">
+      <h3>Daily Enquiries</h3>
+      <div style="position:relative;height:260px">
+        <canvas id="enquiryTrendChart"></canvas>
+      </div>
+    </div>
+
+    <div style="min-width:0">
+      <h3>Enquiry Status</h3>
+      <div style="position:relative;height:260px">
+        <canvas id="enquiryStatusChart"></canvas>
+      </div>
+    </div>
   </div>
 </div>
 
-<div class="panel">
-  <h2>Enquiry Status Report</h2>
-  <div style="position:relative;height:260px">
-    <canvas id="enquiryStatusChart"></canvas>
-  </div>
-</div>
-    <div class="panel">
-      <div class="pagehead">
         <div>
           <h2 style="margin:0 0 6px">Latest Enquiries</h2>
           <div class="muted">
@@ -536,51 +604,98 @@ if (typeof Chart === 'undefined') {
   throw new Error('Chart.js load nahi hua. Internet connection check karein.');
 }
 
-new Chart(document.getElementById('enquiryTrendChart'), {
-  type: 'line',
-  data: {
-    labels: Object.keys(dailyCounts),
-    datasets: [{
-      label: 'Enquiries',
-      data: Object.values(dailyCounts),
-      borderColor: '#A05AFF',
-      backgroundColor: 'rgba(160,90,255,0.15)',
-      fill: true,
-      tension: 0.3
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: { precision: 0 }
+
+if (typeof Chart === 'undefined') {
+  throw new Error('Chart.js load nahi hua.');
+}
+
+const trendChart = new Chart(
+  document.getElementById('enquiryTrendChart'),
+  {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Enquiries',
+        data: [],
+        borderColor: '#A05AFF',
+        backgroundColor: 'rgba(160,90,255,0.15)',
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 }
+        }
       }
     }
   }
+);
+
+const statusChart = new Chart(
+  document.getElementById('enquiryStatusChart'),
+  {
+    type: 'doughnut',
+    data: {
+      labels: ['New', 'Contacted', 'In Progress', 'Completed', 'Rejected'],
+      datasets: [{
+        data: [0, 0, 0, 0, 0],
+        backgroundColor: [
+          '#A05AFF', '#4BCBEB', '#1BCFB4',
+          '#65B96E', '#FE9496'
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
+  }
+);
+
+function updateReport() {
+  const result = filterReportRows();
+  if (!result) return;
+
+  const { dailyCounts, statusCounts, filteredRows, range } = result;
+
+  trendChart.data.labels = Object.keys(dailyCounts);
+  trendChart.data.datasets[0].data = Object.values(dailyCounts);
+  trendChart.update();
+
+  statusChart.data.datasets[0].data = Object.values(statusCounts);
+  statusChart.update();
+
+  const lastDay = new Date(range.toExclusive);
+  lastDay.setDate(lastDay.getDate() - 1);
+
+  document.getElementById('reportDateLabel').textContent =
+    `${range.from.toLocaleDateString('en-IN')} – ${lastDay.toLocaleDateString('en-IN')} | ${filteredRows.length} enquiries`;
+}
+
+const periodSelect = document.getElementById('reportPeriod');
+const fromInput = document.getElementById('reportFrom');
+const toInput = document.getElementById('reportTo');
+const applyButton = document.getElementById('applyReportFilter');
+
+periodSelect.addEventListener('change', () => {
+  const custom = periodSelect.value === 'custom';
+
+  fromInput.style.display = custom ? '' : 'none';
+  toInput.style.display = custom ? '' : 'none';
+  applyButton.style.display = custom ? '' : 'none';
+
+  if (!custom) updateReport();
 });
 
-new Chart(document.getElementById('enquiryStatusChart'), {
-  type: 'doughnut',
-  data: {
-    labels: Object.keys(statusCounts),
-    datasets: [{
-      data: Object.values(statusCounts),
-      backgroundColor: [
-        '#A05AFF',
-        '#4BCBEB',
-        '#1BCFB4',
-        '#65B96E',
-        '#FE9496'
-      ]
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false
-  }
-});
+applyButton.addEventListener('click', updateReport);
+updateReport();
+  
 }
   
 
