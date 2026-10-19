@@ -396,9 +396,6 @@ if (reportError) throw reportError;
 
 const reportRows = allEnquiries || [];
 
-
-const reportRows = allEnquiries || [];
-
 function reportDateKey(date) {
   return [
     date.getFullYear(),
@@ -508,9 +505,7 @@ function filterReportRows() {
         <div class="stat">${enquiryCount}</div>
         <div>View all enquiries →</div>
       </div>
-    </div>
-<div class="panel">
-  
+    </div> 
 <div class="panel">
   <h2>Enquiry Report</h2>
 
@@ -548,7 +543,8 @@ function filterReportRows() {
     </div>
   </div>
 </div>
-
+    <div class="panel">
+      <div class="pagehead">
         <div>
           <h2 style="margin:0 0 6px">Latest Enquiries</h2>
           <div class="muted">
@@ -602,11 +598,6 @@ function filterReportRows() {
   `;
 if (typeof Chart === 'undefined') {
   throw new Error('Chart.js load nahi hua. Internet connection check karein.');
-}
-
-
-if (typeof Chart === 'undefined') {
-  throw new Error('Chart.js load nahi hua.');
 }
 
 const trendChart = new Chart(
