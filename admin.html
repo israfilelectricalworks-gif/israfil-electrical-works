@@ -355,6 +355,7 @@ async function renderPage(page) {
  try {
   if(page==='overview') await overview(host);
   else if(configs[page]) await listing(host,page);
+  else if(page==='enquiries') await enquiriesPage(host);
   else if(page==='content') await contentPage(host);
   else if(page==='settings') settingsPage(host);
  } catch(e) {
