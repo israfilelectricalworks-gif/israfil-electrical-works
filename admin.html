@@ -441,7 +441,7 @@ async function overview(host) {
           </div>
         </div>
         ${enquiryCount > 10
-          ? '<button class="gold" onclick="renderPage(\\'enquiries\\')">See All Enquiries →</button>'
+          ? `<button class="gold" onclick="renderPage('enquiries')">See All Enquiries →</button>`
           : ''}
       </div>
 
@@ -479,7 +479,7 @@ async function overview(host) {
       ` : '<p class="muted">Abhi koi enquiry nahi aayi hai.</p>'}
 
       ${enquiryCount > 10
-        ? '<button class="gold" style="margin-top:14px" onclick="renderPage(\\'enquiries\\')">See All Enquiries →</button>'
+        ? `<button class="gold" style="margin-top:14px" onclick="renderPage('enquiries')">See All Enquiries →</button>`
         : ''}
     </div>
 
