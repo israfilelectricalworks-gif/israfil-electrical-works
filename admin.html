@@ -149,6 +149,7 @@ th{background:#FAF7FD;color:#695777}
    <button data-page="services">⚡ Services</button>
    <button data-page="locations">⌖ Service Locations</button>
    <button data-page="content">▤ Site Content</button>
+    <button data-page="enquiries">📩 Enquiries</button>
    <button data-page="settings">⚙ Settings</button>
   </nav>
   <div class="notice">Manage your website content from one place.</div>
@@ -337,9 +338,14 @@ const configs={
 async function renderPage(page) {
  currentPage=page;
  const titles={
-  overview:'Dashboard',products:'Products',services:'Services',
-  locations:'Service Locations',content:'Site Content',settings:'Settings'
- };
+  overview:'Dashboard',
+  products:'Products',
+  services:'Services',
+  locations:'Service Locations',
+  content:'Site Content',
+  enquiries:'Enquiries',
+  settings:'Settings'
+};
  $('#topTitle').textContent=titles[page]||page;
  document.querySelectorAll('[data-page]').forEach(b=>{
   b.classList.toggle('active',b.dataset.page===page);
@@ -555,7 +561,161 @@ async function openContentEditor(key='') {
   } catch(error) {notify(error.message,true);}
  });
 }
+/* ========== ENQUIRIES ========== */
+async function enquiriesPage(host) {
+  const { data, error } = await db
+    .from('enquiries')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(500);
 
+  if (error) throw error;
+
+  const rows = data || [];
+  const statuses = [
+    'New',
+    'Contacted',
+    'In Progress',
+    'Completed',
+    'Rejected'
+  ];
+
+  host.innerHTML = `
+    <div class="pagehead">
+      <div>
+        <h1>Customer Enquiries</h1>
+        <div class="muted">Total enquiries: ${rows.length}</div>
+      </div>
+      <button class="gold" onclick="renderPage('enquiries')">
+        Refresh
+      </button>
+    </div>
+
+    <div class="toolbar">
+      <input id="enquirySearch" placeholder="Search name, mobile, service...">
+      <select id="enquiryStatusFilter">
+        <option value="">All Statuses</option>
+        ${statuses.map(s => `<option>${s}</option>`).join('')}
+      </select>
+    </div>
+
+    <div id="enquiryList"></div>
+  `;
+
+  const list = host.querySelector('#enquiryList');
+  const search = host.querySelector('#enquirySearch');
+  const filter = host.querySelector('#enquiryStatusFilter');
+
+  function draw() {
+    const q = search.value.trim().toLowerCase();
+    const selectedStatus = filter.value;
+
+    const filtered = rows.filter(r => {
+      const searchable = [
+        r.customer_name,
+        r.mobile_number,
+        r.company_name,
+        r.required_service,
+        r.project_location,
+        r.state,
+        r.district
+      ].join(' ').toLowerCase();
+
+      return searchable.includes(q) &&
+        (!selectedStatus || (r.status || 'New') === selectedStatus);
+    });
+
+    if (!filtered.length) {
+      list.innerHTML = '<div class="panel">No enquiries found.</div>';
+      return;
+    }
+
+    list.innerHTML = filtered.map(r => `
+      <div class="panel" style="margin-bottom:14px">
+        <div class="pagehead">
+          <div>
+            <h3>${escapeHTML(r.customer_name)}</h3>
+            <div class="muted">
+              ${escapeHTML(r.created_at
+                ? new Date(r.created_at).toLocaleString('en-IN')
+                : '')}
+            </div>
+          </div>
+          <strong>${escapeHTML(r.status || 'New')}</strong>
+        </div>
+
+        <p><b>Mobile:</b> ${escapeHTML(r.mobile_number)}</p>
+        <p><b>Company:</b> ${escapeHTML(r.company_name || 'Not provided')}</p>
+        <p><b>Location:</b> ${escapeHTML([
+          r.project_location, r.district, r.state, r.pin_code
+        ].filter(Boolean).join(', '))}</p>
+        <p><b>Service:</b> ${escapeHTML(r.required_service)}</p>
+        <p><b>Other service:</b> ${escapeHTML(r.other_service_details || '—')}</p>
+        <p><b>Budget:</b> ${escapeHTML(r.estimated_budget || '—')}</p>
+        <p><b>Timeline:</b> ${escapeHTML(r.work_timeline || '—')}</p>
+        <p><b>Email:</b> ${escapeHTML(r.customer_email || '—')}</p>
+        <p><b>Project details:</b> ${escapeHTML(r.project_details || '—')}</p>
+
+        <label>Status</label>
+        <select data-status="${escapeHTML(r.id)}">
+          ${statuses.map(s =>
+            `<option ${((r.status || 'New') === s) ? 'selected' : ''}>${s}</option>`
+          ).join('')}
+        </select>
+
+        <label>Admin Notes</label>
+        <textarea data-notes="${escapeHTML(r.id)}"
+          placeholder="Follow-up notes...">${escapeHTML(r.admin_notes || '')}</textarea>
+
+        <button style="margin-top:12px"
+          data-save="${escapeHTML(r.id)}">Save Update</button>
+
+        <a style="display:inline-block;margin:12px"
+          href="https://wa.me/91${encodeURIComponent(r.mobile_number)}"
+          target="_blank" rel="noopener">Open WhatsApp</a>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('[data-save]').forEach(button => {
+      button.addEventListener('click', async () => {
+        const id = button.dataset.save;
+        const status = list.querySelector(
+          `[data-status="${CSS.escape(id)}"]`
+        ).value;
+        const notes = list.querySelector(
+          `[data-notes="${CSS.escape(id)}"]`
+        ).value.trim();
+
+        button.disabled = true;
+        button.textContent = 'Saving...';
+
+        try {
+          const { error } = await db
+            .from('enquiries')
+            .update({
+              status,
+              admin_notes: notes,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', id);
+
+          if (error) throw error;
+
+          notify('Enquiry updated successfully');
+          await enquiriesPage(host);
+        } catch (e) {
+          notify(e.message || 'Update failed', true);
+          button.disabled = false;
+          button.textContent = 'Save Update';
+        }
+      });
+    });
+  }
+
+  search.addEventListener('input', draw);
+  filter.addEventListener('change', draw);
+  draw();
+}
 /* ========== SETTINGS ========== */
 function settingsPage(host) {
  host.innerHTML=`
