@@ -1056,8 +1056,8 @@ async function enquiriesPage(host) {
         Google authorization pending.
       </p>
       <button class="gold" id="connectGoogleAnalyticsBtn" type="button">
-  Connect Google Analytics
-</button>
+        Connect Google Analytics
+      </button>
     </div>
 
     <div class="panel">
@@ -1076,11 +1076,18 @@ async function enquiriesPage(host) {
       </p>
     </div>
   `;
-    if (connectGoogleBtn) {
+
+  const connectGoogleBtn = document.getElementById(
+    'connectGoogleAnalyticsBtn'
+  );
+
+  if (!connectGoogleBtn) return;
+
   connectGoogleBtn.addEventListener('click', async () => {
     const status = document.getElementById('gmbManagementStatus');
 
     try {
+      connectGoogleBtn.disabled = true;
       status.textContent = 'Connecting to Google...';
 
       const { data: sessionData, error: sessionError } =
@@ -1113,13 +1120,11 @@ async function enquiriesPage(host) {
     } catch (error) {
       status.textContent =
         'Connection failed: ' + (error.message || 'Unknown error');
+
+      connectGoogleBtn.disabled = false;
     }
   });
-}}
-    const connectGoogleBtn = document.getElementById(
-  'connectGoogleAnalyticsBtn'
-);
-
+}
 
 /* ========== SETTINGS ========== */
 function settingsPage(host) {
