@@ -1076,12 +1076,7 @@ async function enquiriesPage(host) {
       </p>
     </div>
   `;
-    }
-    const connectGoogleBtn = document.getElementById(
-  'connectGoogleAnalyticsBtn'
-);
-
-if (connectGoogleBtn) {
+    if (connectGoogleBtn) {
   connectGoogleBtn.addEventListener('click', async () => {
     const status = document.getElementById('gmbManagementStatus');
 
@@ -1120,7 +1115,12 @@ if (connectGoogleBtn) {
         'Connection failed: ' + (error.message || 'Unknown error');
     }
   });
-}
+}}
+    const connectGoogleBtn = document.getElementById(
+  'connectGoogleAnalyticsBtn'
+);
+
+
 /* ========== SETTINGS ========== */
 function settingsPage(host) {
  host.innerHTML=`
