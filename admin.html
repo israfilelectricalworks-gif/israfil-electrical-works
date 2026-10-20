@@ -1055,6 +1055,9 @@ async function enquiriesPage(host) {
       <p id="gmbManagementStatus" class="notice">
         Google authorization pending.
       </p>
+      <button class="gold" id="connectGoogleAnalyticsBtn" type="button">
+  Connect Google Analytics
+</button>
     </div>
 
     <div class="panel">
@@ -1074,6 +1077,50 @@ async function enquiriesPage(host) {
     </div>
   `;
     }
+    const connectGoogleBtn = document.getElementById(
+  'connectGoogleAnalyticsBtn'
+);
+
+if (connectGoogleBtn) {
+  connectGoogleBtn.addEventListener('click', async () => {
+    const status = document.getElementById('gmbManagementStatus');
+
+    try {
+      status.textContent = 'Connecting to Google...';
+
+      const { data: sessionData, error: sessionError } =
+        await db.auth.getSession();
+
+      if (sessionError) throw sessionError;
+
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        throw new Error('Pehle Admin Panel mein login karo.');
+      }
+
+      const { data, error } = await db.functions.invoke(
+        'google-oauth-start',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        }
+      );
+
+      if (error) throw error;
+
+      if (!data?.authorization_url) {
+        throw new Error(data?.error || 'Google URL nahi mila.');
+      }
+
+      window.location.href = data.authorization_url;
+    } catch (error) {
+      status.textContent =
+        'Connection failed: ' + (error.message || 'Unknown error');
+    }
+  });
+}
 /* ========== SETTINGS ========== */
 function settingsPage(host) {
  host.innerHTML=`
