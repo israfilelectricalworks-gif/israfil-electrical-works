@@ -147,8 +147,9 @@ th{background:#FAF7FD;color:#695777}
    <button data-page="products">▣ Products</button>
    <button data-page="services">⚡ Services</button>
    <button data-page="locations">⌖ Service Locations</button>
+   <button data-page="gmb">📊 GMB Management</button>
    <button data-page="content">▤ Site Content</button>
-    <button data-page="enquiries">📩 Enquiries</button>
+   <button data-page="enquiries">📩 Enquiries</button>
    <button data-page="settings">⚙ Settings</button>
   </nav>
   <div class="notice">Manage your website content from one place.</div>
@@ -341,6 +342,7 @@ async function renderPage(page) {
   products:'Products',
   services:'Services',
   locations:'Service Locations',
+  gmb:'GMB Management',
   content:'Site Content',
   enquiries:'Enquiries',
   settings:'Settings'
@@ -355,6 +357,7 @@ async function renderPage(page) {
   if(page==='overview') await overview(host);
   else if(configs[page]) await listing(host,page);
   else if(page==='enquiries') await enquiriesPage(host);
+  else if(page==='gmb') await gmbPage(host);
   else if(page==='content') await contentPage(host);
   else if(page==='settings') settingsPage(host);
  } catch(e) {
@@ -495,17 +498,41 @@ function filterReportRows() {
         <div class="stat">${services}</div>
         <div>Service records</div>
       </div>
-      <div class="card blue">
-        <div>Locations</div>
-        <div class="stat">${locations}</div>
-        <div>Service areas</div>
-      </div>
+      <div class="card blue" onclick="renderPage('gmb')" style="cursor:pointer">
+  <div>How people discovered you</div>
+  <div class="stat" id="gmbProfileViews">—</div>
+  <div style="font-size:15px;margin-top:12px">
+    ◉ People viewed your Business Profile
+  </div>
+</div>
       <div class="card pink" onclick="renderPage('enquiries')" style="cursor:pointer">
         <div>Total Enquiries</div>
         <div class="stat">${enquiryCount}</div>
         <div>View all enquiries →</div>
       </div>
     </div> 
+    <div class="panel">
+  <h2>GMB Performance</h2>
+
+  <div class="toolbar">
+    <select id="gmbMetricFilter">
+      <option value="overview">Overview</option>
+      <option value="calls">Calls</option>
+      <option value="chat_clicks">Chat clicks</option>
+      <option value="bookings">Bookings</option>
+      <option value="directions">Directions</option>
+      <option value="website_clicks">Website clicks</option>
+    </select>
+  </div>
+
+  <p id="gmbReportStatus" class="muted">
+    Google Business Profile authorization pending.
+  </p>
+
+  <div style="position:relative;height:280px">
+    <canvas id="gmbPerformanceChart"></canvas>
+  </div>
+</div>
 <div class="panel">
   <h2>Enquiry Report</h2>
 
@@ -1008,6 +1035,45 @@ async function enquiriesPage(host) {
   filter.addEventListener('change', draw);
   draw();
 }
+    function gmbPage(host) {
+  host.innerHTML = `
+    <div class="pagehead">
+      <div>
+        <h1>GMB Management</h1>
+        <div class="muted">
+          Google Business Profile reports and management
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Profile Performance</h2>
+      <p class="muted">
+        Views, calls, chat clicks, bookings, directions
+        and website clicks.
+      </p>
+      <p id="gmbManagementStatus" class="notice">
+        Google authorization pending.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h2>Reviews & Posts</h2>
+      <p class="muted">
+        Reviews, replies and posts will be enabled after
+        Google API authorization and permission checks.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h2>Business Information</h2>
+      <p class="muted">
+        Profile details and supported editing options
+        will appear after the connection is verified.
+      </p>
+    </div>
+  `;
+    }
 /* ========== SETTINGS ========== */
 function settingsPage(host) {
  host.innerHTML=`
