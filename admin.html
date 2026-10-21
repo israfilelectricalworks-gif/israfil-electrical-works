@@ -1116,9 +1116,7 @@ async function enquiriesPage(host) {
       <p id="gmbManagementStatus" class="notice">
         Google authorization pending.
       </p>
-      <button class="gold" id="connectGoogleAnalyticsBtn" type="button">
-        Connect Google Analytics
-      </button>
+      
     </div>
 
     <div class="panel">
@@ -1191,23 +1189,51 @@ async function enquiriesPage(host) {
 function settingsPage(host) {
  host.innerHTML=`
   <div class="pagehead"><h1>Settings</h1></div>
+
   <div class="panel">
    <h2>Account</h2>
    <p><b>Admin email:</b> ${escapeHTML(currentUser?.email)}</p>
-   <p><b>Admin role:</b> ${currentUser?.app_metadata?.role==='admin'?'Confirmed':'Not detected'}</p>
+   <button class="gold" id="changePasswordBtn" type="button">
+    Change Password
+   </button>
+   <p class="muted">
+    Apne admin account ka password update karein.
+   </p>
   </div>
+
   <div class="panel">
-   <h2>Supabase Connection</h2>
-   <p><b>Project URL:</b> ${escapeHTML(SUPABASE_URL)}</p>
-   <p><b>Publishable key:</b> ${SUPABASE_PUBLISHABLE_KEY.includes('PASTE_')?'Not configured':'Configured'}</p>
-   <div class="notice">Never put your Supabase secret or service-role key in this HTML file.</div>
-   <button class="ghost" onclick="refreshSession()">Refresh Session</button>
+   <h2>Google Analytics</h2>
+   <p class="muted">
+    Website visits aur traffic reports ke liye Google connect karein.
+   </p>
+   <button class="gold" id="settingsAnalyticsBtn" type="button">
+    Connect Google Analytics
+   </button>
+   <p id="settingsAnalyticsStatus" class="muted"></p>
   </div>
+
   <div class="panel">
-   <h2>Brand Colours</h2>
-   <p>Purple: #A05AFF</p><p>Turquoise: #1BCFB4</p>
-   <p>Sky Blue: #4BCBEB</p><p>Coral Pink: #FE9496</p>
-  </div>`;
+   <h2>Google Business Profile (GMB)</h2>
+   <p class="muted">
+    Business Profile ke supported insights aur performance ke liye connect karein.
+   </p>
+   <button class="gold" id="settingsGmbBtn" type="button">
+    Connect GMB
+   </button>
+   <p id="settingsGmbStatus" class="muted"></p>
+  </div>
+ `;
+
+ document.getElementById('settingsAnalyticsBtn')
+  .addEventListener('click', () => renderPage('gmb'));
+
+ document.getElementById('settingsGmbBtn')
+  .addEventListener('click', () => renderPage('gmb'));
+
+ document.getElementById('changePasswordBtn')
+  .addEventListener('click', () => {
+   notify('Password change form abhi implement karna baaki hai.', true);
+  });
 }
 
 async function refreshSession() {
