@@ -818,50 +818,107 @@ function rowHTML(config,row) {
 }
 
 /* ========== ADD / EDIT ========== */
-async function openEditor(key,id) {
- const config=configs[key];
- if(!config) return;
- let record={is_active:true,sort_order:0};
- if(id) {
-  const {data,error}=await db.from(config.table).select('*').eq('id',id).single();
-  if(error) return notify(error.message,true);
-  record=data;
- }
+
  const fields=config.fields.map(([name,label,type,required])=>{
-  if(type==='checkbox') return `<label class="span"><input style="width:auto" name="${name}" type="checkbox" ${record[name]?'checked':''}> ${label}</label>`;
-  if(type==='textarea') return `<div class="span"><label>${label}</label><textarea name="${name}">${escapeHTML(record[name]??'')}</textarea></div>`;
+  if(key==='products' && name==='image_url') {
+   return `
+    <div class="span">
+     <label>Product Image</label>
+     <input name="image_url" type="url"
+       value="${escapeHTML(record.image_url||'')}"
+       placeholder="Existing image URL (optional)">
+     ${record.image_url ? `
+       <img src="${escapeHTML(record.image_url)}"
+         alt="Current product image"
+         style="display:block;width:150px;height:100px;object-fit:cover;margin:8px 0;border-radius:8px">
+     ` : ''}
+     <label>Upload New Image (JPG, PNG, WebP, AVIF)</label>
+     <input name="product_image_file" type="file"
+       accept="image/jpeg,image/png,image/webp,image/avif">
+     <small class="muted">Maximum file size: 10 MB. Uploading a new image replaces the saved image URL.</small>
+    </div>`;
+  }
+  if(type==='checkbox')
+   return `<label class="span"><input style="width:auto" name="${name}" type="checkbox" ${record[name]?'checked':''}> ${label}</label>`;
+  if(type==='textarea')
+   return `<div class="span"><label>${label}</label><textarea name="${name}">${escapeHTML(record[name]??'')}</textarea></div>`;
   return `<div><label>${label}${required?' *':''}</label><input name="${name}" type="${type}" value="${escapeHTML(record[name]??'')}" ${required?'required':''}></div>`;
  }).join('');
+    
 
- $('#modalRoot').innerHTML=`
-  <div class="modalbg"><div class="modal">
-   <h2>${id?'Edit':'Add'} ${config.title}</h2>
-   <form id="recordForm"><div class="formgrid">${fields}</div>
-    <div class="modalactions">
-     <button type="button" class="ghost" onclick="closeModal()">Cancel</button>
-     <button class="gold" type="submit">Save Record</button>
-    </div>
-   </form>
-  </div></div>`;
-
- $('#recordForm').addEventListener('submit',async e=>{
+  $('#recordForm').addEventListener('submit',async e=>{
   e.preventDefault();
-  const form=e.target,fd=new FormData(form),payload={};
-  for(const [name,,type] of config.fields) {
-   if(type==='checkbox') payload[name]=form.elements[name].checked;
-   else if(type==='number') payload[name]=Number(fd.get(name)||0);
-   else payload[name]=String(fd.get(name)||'').trim()||null;
-  }
+
+  const form=e.target;
+  const fd=new FormData(form);
+  const payload={};
+
   try {
+   for(const [name,,type] of config.fields) {
+    if(type==='checkbox') {
+     payload[name]=form.elements[name].checked;
+    } else if(type==='number') {
+     payload[name]=Number(fd.get(name)||0);
+    } else {
+     payload[name]=String(fd.get(name)||'').trim()||null;
+    }
+   }
+
+   // Upload a new product image if selected
+   if(key==='products') {
+    const file=form.elements['product_image_file']?.files?.[0];
+
+    if(file) {
+     const allowedTypes=[
+      'image/jpeg','image/png','image/webp','image/avif'
+     ];
+
+     if(!allowedTypes.includes(file.type)) {
+      throw new Error('JPG, PNG, WebP ya AVIF image hi upload karein.');
+     }
+
+     if(file.size>10*1024*1024) {
+      throw new Error('Image ka size 10 MB se kam hona chahiye.');
+     }
+
+     const safeName=file.name
+      .replace(/[^a-zA-Z0-9._-]/g,'-');
+
+     const filePath=`products/${crypto.randomUUID()}-${safeName}`;
+
+     const {error:uploadError}=await db.storage
+      .from('site-media')
+      .upload(filePath,file,{
+       cacheControl:'3600',
+       upsert:false,
+       contentType:file.type
+      });
+
+     if(uploadError) throw uploadError;
+
+     const {data:urlData}=db.storage
+      .from('site-media')
+      .getPublicUrl(filePath);
+
+     payload.image_url=urlData.publicUrl;
+    }
+   }
+
    const result=id
     ? await db.from(config.table).update(payload).eq('id',id)
     : await db.from(config.table).insert(payload);
+
    if(result.error) throw result.error;
+
    closeModal();
    notify('Record saved successfully');
    await renderPage(key);
-  } catch(error) {notify(error.message,true);}
+
+  } catch(error) {
+   notify(error.message||'Save failed',true);
+  }
  });
+  
 }
 
 async function toggleRecord(table,id,active) {
