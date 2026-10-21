@@ -104,6 +104,8 @@ th{background:#FAF7FD;color:#695777}
  .cards{grid-template-columns:1fr 1fr}
  .header-titles strong{max-width:155px}
  #userEmail{display:none}
+}#websiteTrafficPanel {
+  scroll-margin-top: 20px;
 }
 </style>
 </head>
@@ -493,16 +495,18 @@ function filterReportRows() {
         <div class="stat">${products}</div>
         <div>Product records</div>
       </div>
-      <div class="card turquoise">
-        <div>Services</div>
-        <div class="stat">${services}</div>
-        <div>Service records</div>
-      </div>
+      <div class="card turquoise"
+     onclick="document.getElementById('websiteTrafficPanel').scrollIntoView({behavior:'smooth',block:'start'})"
+     style="cursor:pointer">
+  <div>Website Visits</div>
+  <div class="stat" id="websiteVisitCount">—</div>
+  <div>View website traffic ↓</div>
+</div>
       <div class="card blue" onclick="renderPage('gmb')" style="cursor:pointer">
   <div>How people discovered you</div>
   <div class="stat" id="gmbProfileViews">—</div>
   <div style="font-size:15px;margin-top:12px">
-    ◉ People viewed your Business Profile
+    People viewed your GMB
   </div>
 </div>
       <div class="card pink" onclick="renderPage('enquiries')" style="cursor:pointer">
@@ -621,7 +625,38 @@ function filterReportRows() {
         : ''}
     </div>
 
-    
+   <div class="panel" id="websiteTrafficPanel">
+  <h2>Website Traffic</h2>
+  <p class="muted">
+    Website visits aur traffic sources
+  </p>
+
+  <div class="toolbar" style="flex-wrap:wrap;gap:10px">
+    <select id="websiteTrafficPeriod">
+      <option value="today">Today</option>
+      <option value="yesterday">Yesterday</option>
+      <option value="7" selected>Last 7 Days</option>
+      <option value="30">Last 30 Days</option>
+      <option value="custom">Custom Date Range</option>
+    </select>
+
+    <select id="websiteTrafficMetric">
+      <option value="overview">Overview</option>
+      <option value="google">Google Search</option>
+      <option value="direct">Direct Traffic</option>
+      <option value="referral">Referral / Other Links</option>
+      <option value="unique">Unique Visitors</option>
+    </select>
+  </div>
+
+  <p id="websiteTrafficStatus" class="muted">
+    Real traffic data connect hone ka intezar hai.
+  </p>
+
+  <div style="position:relative;height:280px">
+    <canvas id="websiteTrafficChart"></canvas>
+  </div>
+</div> 
   `;
 if (typeof Chart === 'undefined') {
   throw new Error('Chart.js load nahi hua. Internet connection check karein.');
@@ -713,7 +748,33 @@ periodSelect.addEventListener('change', () => {
 
 applyButton.addEventListener('click', updateReport);
 updateReport();
-  
+ const websiteTrafficChart = new Chart(
+  document.getElementById('websiteTrafficChart'),
+  {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Website Visits',
+        data: [],
+        borderColor: '#1BCFB4',
+        backgroundColor: 'rgba(27,207,180,0.14)',
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 }
+        }
+      }
+    }
+  }
+); 
 }
   
 
