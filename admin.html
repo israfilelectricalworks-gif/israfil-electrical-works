@@ -302,17 +302,15 @@ document.querySelectorAll('[data-page]').forEach(button=>{
 
 /* ========== DATABASE TABLES ========== */
 const configs={
- products:{
+  products:{
   title:'Products',table:'products',
   fields:[
-   ['title','Product Title','text',true],
-   ['category','Category','text',false],
-   ['image_url','Image URL','url',false],
-   ['description','Description','textarea',false],
-   ['sort_order','Sort Order','number',false],
+   ['title','Product Name','text',true],
+   ['image_url','Product Image URL','url',false],
+   ['description','Product Description','textarea',false],
    ['is_active','Active','checkbox',false]
   ],
-  columns:['title','category','is_active','sort_order']
+  columns:['title','is_active']
  },
  services:{
   title:'Services',table:'services',
@@ -788,7 +786,10 @@ async function listing(host,key) {
  host.innerHTML=`
   <div class="pagehead">
    <div><h1>${config.title}</h1><div class="muted">Add, edit and manage records.</div></div>
-   <button class="gold" onclick="openEditor('${key}')">+ Add New</button>
+   <button class="gold"
+ onclick="${key === 'products' ? 'openProductEditor()' : `openEditor('${key}')`}">
+ + Add New
+</button>
   </div>
   <div class="toolbar">
    <input id="filterInput" placeholder="Search records...">
@@ -812,11 +813,132 @@ function rowHTML(config,row) {
   return `<td>${escapeHTML(row[c])}</td>`;
  }).join('')}
  <td>
-  <button class="ghost small" onclick="openEditor('${config.table === 'service_locations' ? 'locations' : config.table}','${row.id}')">Edit</button>
+  <button class="ghost small"
+ onclick="${config.table === 'products'
+ ? `openProductEditor('${row.id}')`
+ : `openEditor('${config.table === 'service_locations' ? 'locations' : config.table}','${row.id}')`}">
+ Edit
+</button>
   <button class="danger small" onclick="toggleRecord('${config.table}','${row.id}',${!row.is_active})">${row.is_active?'Deactivate':'Activate'}</button>
  </td></tr>`;
 }
+async function openProductEditor(id) {
+  const bucket = 'site-media';
+  let record = { title: '', description: '', image_url: '', is_active: true };
 
+  if (id) {
+    const { data, error } = await db
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) return notify(error.message, true);
+    record = data;
+  }
+
+  $('#modalRoot').innerHTML = `
+    <div class="modalbg"><div class="modal">
+      <h2>${id ? 'Edit' : 'Add'} Product</h2>
+      <form id="productForm">
+        <label>Product Image</label>
+        <input name="image_file" type="file"
+          accept="image/jpeg,image/png,image/webp,image/avif">
+
+        ${record.image_url ? `
+          <p class="muted">Current image:</p>
+          <img src="${escapeHTML(record.image_url)}"
+            alt="Current product image"
+            style="width:120px;height:100px;object-fit:contain">
+        ` : ''}
+
+        <label>Product Name *</label>
+        <input name="title" required value="${escapeHTML(record.title)}">
+
+        <label>Product Description</label>
+        <textarea name="description">${escapeHTML(record.description || '')}</textarea>
+
+        <label>
+          <input name="is_active" type="checkbox"
+            style="width:auto" ${record.is_active ? 'checked' : ''}>
+          Active
+        </label>
+
+        <div class="modalactions">
+          <button type="button" class="ghost"
+            onclick="closeModal()">Cancel</button>
+          <button class="gold" type="submit">Save Product</button>
+        </div>
+      </form>
+    </div></div>`;
+
+  $('#productForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const form = e.target;
+    const file = form.elements.image_file.files[0];
+
+    try {
+      let image_url = record.image_url || '';
+
+      if (file) {
+        const allowed = [
+          'image/jpeg', 'image/png', 'image/webp', 'image/avif'
+        ];
+
+        if (!allowed.includes(file.type)) {
+          throw new Error('JPG, PNG, WebP ya AVIF image upload karein.');
+        }
+
+        if (file.size > 50 * 1024 * 1024) {
+          throw new Error('Image maximum 50 MB ki honi chahiye.');
+        }
+
+        const ext = file.name.split('.').pop().toLowerCase();
+        const path = `products/${crypto.randomUUID()}.${ext}`;
+
+        const { error: uploadError } = await db.storage
+          .from(bucket)
+          .upload(path, file, { upsert: false, contentType: file.type });
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicData } = db.storage
+          .from(bucket)
+          .getPublicUrl(path);
+
+        image_url = publicData.publicUrl;
+      }
+
+      if (!image_url) {
+        throw new Error('Product image upload karna zaroori hai.');
+      }
+
+      const payload = {
+        title: form.elements.title.value.trim(),
+        description: form.elements.description.value.trim(),
+        image_url,
+        category: record.category || 'Electrical Products',
+        sort_order: record.sort_order ?? Date.now(),
+        is_active: form.elements.is_active.checked,
+        updated_at: new Date().toISOString()
+      };
+
+      if (!payload.title) throw new Error('Product name likhein.');
+
+      const result = id
+        ? await db.from('products').update(payload).eq('id', id)
+        : await db.from('products').insert(payload);
+
+      if (result.error) throw result.error;
+
+      closeModal();
+      notify('Product saved successfully');
+      await renderPage('products');
+    } catch (error) {
+      notify(error.message || 'Product save nahi hua.', true);
+    }
+  });
+    }
 /* ========== ADD / EDIT ========== */
 async function openEditor(key,id) {
  const config=configs[key];
