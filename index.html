@@ -681,7 +681,7 @@ canvas {
 </div></section>
 
 <section id="services" class="band"><div class="wrap"><div class="head"><div><div class="eyebrow">Our Services</div><h2>Complete Electrical Solution.</h2></div><p>Industrial and commercial electrical services across power equipment, distribution, cabling, protection, commissioning and maintenance.</p></div>
-<div class="grid">
+<div class="grid" id="servicesGrid">
 <div class="card"><div class="icon">◈</div><h3>Transformer Installation & Maintenance</h3><p>Erection, installation, testing, commissioning, preventive maintenance and troubleshooting.</p></div>
 <div class="card"><div class="icon">▦</div><h3>LT/HT Panel Installation & Maintenance</h3><p>Panel installation, wiring, cable termination, testing and commissioning.</p></div>
 <div class="card"><div class="icon">⌁</div><h3>Cable Laying & Termination</h3><p>HT/LT cable laying, routing, tray works, termination, jointing and support.</p></div>
@@ -1322,6 +1322,58 @@ if (stats) {
   observer.observe(stats);
 }
 </script>
+  <script>
+(async function () {
+  const grid = document.getElementById("servicesGrid");
+  if (!grid || !window.supabase) return;
+
+  const SUPABASE_URL =
+    "https://xkgkegsjutozmyxdarns.supabase.co";
+
+  const SUPABASE_KEY =
+    "sb_publishable_LlhBoPAZcnDX0rxvg7pJGQ_XIbvz5by";
+
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, c => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[c]);
+  }
+
+  try {
+    const db = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    const { data, error } = await db
+      .from("services")
+      .select("id,title,description,is_active")
+      .eq("is_active", true);
+
+    if (error) throw error;
+
+    // Agar database mein active services nahi hain,
+    // to purane cards ko filhal rehne dein.
+    if (!data || data.length === 0) return;
+
+    grid.innerHTML = data.map(service => `
+      <div class="card">
+        <div class="icon">⚡</div>
+        <h3>${escapeHTML(service.title)}</h3>
+        <p>${escapeHTML(service.description || "")}</p>
+      </div>
+    `).join("");
+
+  } catch (error) {
+    console.error("Services load failed:", error);
+    // Error par purane cards fallback rahenge.
+  }
+})();
+  </script>
 <script>
 (async function () {
   const track = document.getElementById("productsTrack");
