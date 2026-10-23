@@ -918,7 +918,7 @@ async function openProductEditor(id) {
         description: form.elements.description.value.trim(),
         image_url,
         category: record.category || 'Electrical Products',
-        sort_order: record.sort_order ?? Date.now(),
+        sort_order: record.sort_order ?? 0,
         is_active: form.elements.is_active.checked,
         updated_at: new Date().toISOString()
       };
