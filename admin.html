@@ -202,115 +202,202 @@ th{background:#FAF7FD;color:#695777}
   scroll-margin-top: 20px;
 }
   
-/* Animated desk lamp */
-.login {
+
+/* Hanging lamp login */
+#loginScreen.login {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0;
+  padding: 0 18px 40px;
+  min-height: 100vh;
+  background: radial-gradient(circle at 50% 28%, #193f70, #07172f 85%);
+  overflow: hidden;
+}
+
+.hanging-lamp {
   position: relative;
+  width: min(90vw, 340px);
+  height: 285px;
+  flex-shrink: 0;
 }
 
-.lamp-scene {
+.lamp-wire {
   position: absolute;
-  top: 24px;
-  right: max(22px, calc(50% - 300px));
-  width: 100px;
-  height: 120px;
-  z-index: 1;
-  animation: lampFloat 3s ease-in-out infinite;
+  top: 0;
+  left: 50%;
+  width: 4px;
+  height: 75px;
+  background: #7999bd;
+  transform: translateX(-50%);
 }
 
-.lamp-shade {
+.hanging-lamp .lamp-shade {
   position: absolute;
-  top: 10px;
-  left: 25px;
+  top: 72px;
+  left: 50%;
+  width: 250px;
+  height: 130px;
+  transform: translateX(-50%);
+  clip-path: polygon(24% 0,76% 0,100% 100%,0 100%);
+  background: linear-gradient(120deg,#57b8ff,#0871e7);
+  filter: drop-shadow(0 0 12px #258cff);
+  z-index: 3;
+}
+
+.lamp-bulb {
+  position: absolute;
+  top: 190px;
+  left: 50%;
   width: 58px;
-  height: 35px;
-  border-radius: 8px 8px 28px 28px;
-  background: linear-gradient(135deg, #65758b, #3f4d61);
-  transform: rotate(-15deg);
-  box-shadow: 5px 6px 10px #9aa6b8;
+  height: 42px;
+  transform: translateX(-50%);
+  border-radius: 0 0 50% 50%;
+  background: #fff;
+  box-shadow: 0 0 25px #c1e8ff;
+  z-index: 2;
 }
 
-.lamp-neck {
+.light-beam {
   position: absolute;
-  top: 39px;
-  left: 49px;
-  width: 8px;
-  height: 52px;
-  border-radius: 8px;
-  background: linear-gradient(90deg, #77869b, #e3eaf5, #75849a);
-  transform: rotate(13deg);
-  transform-origin: top center;
+  top: 212px;
+  left: 50%;
+  width: 330px;
+  height: 260px;
+  transform: translateX(-50%);
+  clip-path: polygon(45% 0,55% 0,100% 100%,0 100%);
+  background: linear-gradient(to bottom,
+    rgba(96,188,255,.4),
+    rgba(96,188,255,0));
+  pointer-events: none;
+  transition: opacity .5s ease;
 }
 
-.lamp-base {
+.lamp-chain {
   position: absolute;
-  bottom: 10px;
-  left: 25px;
-  width: 52px;
-  height: 13px;
+  top: 195px;
+  left: calc(50% + 112px);
+  height: 55px;
+  border-left: 4px dotted #d5e9ff;
+  z-index: 4;
+}
+
+.lamp-toggle {
+  position: absolute;
+  top: 243px;
+  left: calc(50% + 70px);
+  width: 90px;
+  height: 42px;
+  padding: 5px;
+  border: 2px solid #75bdff;
+  border-radius: 30px;
+  background: #126ce5;
+  box-shadow: 0 0 12px #268cff;
+  z-index: 5;
+  cursor: pointer;
+}
+
+.lamp-toggle::after {
+  content: "";
+  display: block;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: #8795a9;
-  box-shadow: 4px 5px 8px #aab4c4, -4px -4px 8px #edf4ff;
+  background: white;
+  margin-left: auto;
+  transition: transform .35s ease;
 }
 
-.lamp-glow {
-  position: absolute;
-  top: 36px;
-  left: 32px;
-  width: 50px;
-  height: 65px;
-  background: #ffe8a3;
-  filter: blur(24px);
-  opacity: .85;
-  animation: lampGlow 2s ease-in-out infinite alternate;
+#loginScreen.lamp-off .lamp-toggle {
+  background: #374860;
+  box-shadow: none;
 }
 
-.lamp-switch {
-  position: absolute;
-  top: 96px;
-  left: 48px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #ffe49b;
-  box-shadow: 0 0 12px #ffc84a;
+#loginScreen.lamp-off .lamp-toggle::after {
+  transform: translateX(-46px);
 }
 
-@keyframes lampFloat {
-  0%, 100% { transform: translateY(0) rotate(0); }
-  50% { transform: translateY(-5px) rotate(2deg); }
+#loginScreen.lamp-off .lamp-bulb {
+  background: #66758a;
+  box-shadow: none;
 }
 
-@keyframes lampGlow {
-  from { opacity: .45; }
-  to { opacity: .95; }
+#loginScreen.lamp-off .lamp-shade {
+  filter: brightness(.5);
 }
 
-@media (max-width: 600px) {
-  .lamp-scene {
-    top: 12px;
-    right: 8px;
-    transform: scale(.72);
-    transform-origin: top right;
+#loginScreen.lamp-off .light-beam {
+  opacity: 0;
+}
+
+#loginScreen .login-card {
+  z-index: 2;
+  margin-top: 15px;
+  background: #e8eef6;
+  box-shadow: 12px 12px 25px #030c1d80,
+             -5px -5px 18px #ffffff30;
+  transition: opacity .5s ease, transform .5s ease,
+              visibility .5s ease;
+}
+
+#loginScreen.lamp-off .login-card {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(25px);
+  pointer-events: none;
+}
+
+@media(max-width:430px) {
+  .hanging-lamp {
+    height: 265px;
+  }
+  .hanging-lamp .lamp-shade {
+    width: 220px;
+    height: 115px;
+  }
+  .lamp-chain {
+    left: calc(50% + 98px);
+  }
+  .lamp-toggle {
+    left: calc(50% + 60px);
+  }
+  #loginScreen .login-card {
+    margin-top: 5px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  #loginScreen .login-card,
+  .light-beam,
+  .lamp-toggle::after {
+    transition: none;
   }
 }
   
+  
 </style>
 </head>
-<body>
-
-<div class="lamp-scene" aria-label="Animated lamp">
-  <div class="lamp-glow"></div>
+<body> 
+<section id="loginScreen" class="login">
+<div class="hanging-lamp">
+  <div class="lamp-wire"></div>
   <div class="lamp-shade"></div>
-  <div class="lamp-neck"></div>
-  <div class="lamp-base"></div>
-  <div class="lamp-switch"></div>
+  <div class="lamp-bulb"></div>
+  <div class="light-beam"></div>
+  <div class="lamp-chain"></div>
+  <button type="button"
+    class="lamp-toggle"
+    id="lampToggle"
+    aria-label="Turn login lamp off"
+    aria-pressed="true">
+  </button>
 </div>
   
-<section id="loginScreen" class="login">
- <div class="login-card">
+  <div class="login-card">
   <div class="logo-box">
    <img src="https://raw.githubusercontent.com/israfilelectricalworks-gif/israfil-electrical-works/main/asset/logo.webp alt="Israfil Electrical Works"
-        onerror="this.style.display='none';this.parentElement.textContent='IE'">
+        onerror="this.style.display='none';this.parentElement.textContent='Israfil Electrical Works'">
   </div>
   <h1>Welcome Back</h1>
   <div class="muted">Israfil Electrical Works · Admin Panel</div>
@@ -478,6 +565,20 @@ async function boot() {
 
 $('#loginForm').addEventListener('submit',login);
 
+/* Login lamp ON/OFF */
+const lampToggle = document.getElementById('lampToggle');
+const loginScreen = document.getElementById('loginScreen');
+
+lampToggle.addEventListener('click', () => {
+  const isOff = loginScreen.classList.toggle('lamp-off');
+
+  lampToggle.setAttribute('aria-pressed', String(!isOff));
+  lampToggle.setAttribute(
+    'aria-label',
+    isOff ? 'Turn login lamp on' : 'Turn login lamp off'
+  );
+});
+    
 $('#logoutBtn').addEventListener('click',async()=>{
  if(db) await db.auth.signOut();
  currentUser=null;
