@@ -1322,156 +1322,167 @@ if (stats) {
   observer.observe(stats);
 }
 </script>
-<script>(function(){
-
+<script>
+(async function () {
   const track = document.getElementById("productsTrack");
   const seeAllBtn = document.getElementById("seeAllProducts");
   const allGrid = document.getElementById("allProductsGrid");
   const carousel = document.getElementById("productsCarousel");
 
-  if(!track) return;
+  if (!track || !allGrid || !carousel || !seeAllBtn) return;
 
+  const SUPABASE_URL = "https://xkgkegsjutozmyxdarns.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_LlhBoPAZcnDX0rxvg7pJGQ_XIbvz5by";
 
-  /* ORIGINAL PRODUCT CARDS */
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, c => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[c]);
+  }
+
+  // Load active products from Supabase.
+  try {
+    if (window.supabase) {
+      const db = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+      );
+
+      const { data, error } = await db
+        .from("products")
+        .select("id,title,description,image_url,sort_order,is_active")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+
+      if (error) throw error;
+
+      if (data && data.length) {
+        track.innerHTML = data.map((p, i) => {
+          const image = escapeHTML(p.image_url);
+          const title = escapeHTML(p.title);
+          const description = escapeHTML(p.description || "");
+
+          return `
+            <article class="product-card">
+              <a class="product-image-link" href="${image}">
+                <img src="${image}" alt="${title}"
+                     loading="lazy" decoding="async">
+              </a>
+              <div class="product-info">
+                <span class="product-number">
+                  ${String(i + 1).padStart(2, "0")}
+                </span>
+                <h3>${title}</h3>
+                <p>${description}</p>
+              </div>
+            </article>
+          `;
+        }).join("");
+      }
+    }
+  } catch (error) {
+    console.error("Products database load failed:", error);
+    // Keep existing static products as fallback.
+  }
+
+  // Build the See All Products grid.
   const originalCards = [...track.children];
+  if (!originalCards.length) return;
 
-
-  /* CREATE ALL PRODUCTS GRID */
+  allGrid.innerHTML = "";
   originalCards.forEach(card => {
     allGrid.appendChild(card.cloneNode(true));
   });
 
-
-  /* DUPLICATE PRODUCTS FOR INFINITE SLIDE */
+  // Duplicate cards for continuous slider movement.
   originalCards.forEach(card => {
     track.appendChild(card.cloneNode(true));
   });
-
 
   let position = 0;
   let isDragging = false;
   let startX = 0;
   let startPosition = 0;
 
-  /* SLOW AUTOMATIC SPEED */
+  // Lower value means slower automatic sliding.
   const autoSpeed = 0.22;
 
-
-  function getSetWidth(){
+  function getSetWidth() {
     return track.scrollWidth / 2;
   }
 
-
-  function render(){
-    track.style.transform =
-      `translate3d(${-position}px,0,0)`;
+  function render() {
+    track.style.transform = `translate3d(${-position}px,0,0)`;
   }
 
-
-  /* AUTOMATIC SLOW SLIDING */
-  function autoSlide(){
-
-    if(!isDragging){
-
+  function autoSlide() {
+    if (!isDragging && !carousel.classList.contains("hidden")) {
       position += autoSpeed;
-
       const width = getSetWidth();
 
-      if(position >= width){
-        position -= width;
-      }
-
+      if (width > 0 && position >= width) position -= width;
       render();
     }
 
     requestAnimationFrame(autoSlide);
   }
 
- 
-
-  /* MOUSE / MOBILE SWIPE */
-  track.addEventListener("pointerdown", function(e){
-
+  track.addEventListener("pointerdown", e => {
     isDragging = true;
-
     startX = e.clientX;
     startPosition = position;
-
     track.classList.add("dragging");
 
-    track.setPointerCapture(e.pointerId);
-
+    if (track.setPointerCapture) {
+      track.setPointerCapture(e.pointerId);
+    }
   });
 
-
-  track.addEventListener("pointermove", function(e){
-
-    if(!isDragging) return;
-
-    const distance = e.clientX - startX;
-
-    position = startPosition - distance;
+  track.addEventListener("pointermove", e => {
+    if (!isDragging) return;
 
     const width = getSetWidth();
+    if (!width) return;
 
-    if(position >= width){
-      position -= width;
-    }
+    position = startPosition - (e.clientX - startX);
 
-    if(position < 0){
-      position += width;
-    }
+    if (position >= width) position -= width;
+    if (position < 0) position += width;
 
     render();
-
   });
 
-
-  function stopDragging(){
-
+  function stopDragging() {
     isDragging = false;
-
     track.classList.remove("dragging");
-
   }
-
 
   track.addEventListener("pointerup", stopDragging);
   track.addEventListener("pointercancel", stopDragging);
+  track.addEventListener("lostpointercapture", stopDragging);
 
+  // Keep the See All Products button.
+  seeAllBtn.addEventListener("click", function () {
+    const showingAll = allGrid.classList.contains("show");
 
-  /* SEE ALL PRODUCTS */
-  seeAllBtn.addEventListener("click", function(){
-
-    const showingAll =
-      allGrid.classList.contains("show");
-
-    if(!showingAll){
-
+    if (!showingAll) {
       carousel.classList.add("hidden");
       allGrid.classList.add("show");
-
-      seeAllBtn.innerHTML =
-        'Hide All Products <span>↑</span>';
-
-    }else{
-
+      seeAllBtn.innerHTML = 'Hide All Products <span>↑</span>';
+    } else {
       allGrid.classList.remove("show");
       carousel.classList.remove("hidden");
-
-      seeAllBtn.innerHTML =
-        'See All Products <span>↓</span>';
-
+      seeAllBtn.innerHTML = 'See All Products <span>↓</span>';
     }
-
   });
 
-
-  /* START AUTO SLIDE */
   autoSlide();
-
 })();
-  </script><script>
+  </script>
 (function(){
 
   const lightbox = document.getElementById("imageLightbox");
