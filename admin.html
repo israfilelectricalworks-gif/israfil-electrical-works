@@ -808,19 +808,28 @@ async function listing(host,key) {
 }
 
 function rowHTML(config,row) {
- return `<tr>${config.columns.map(c=>{
-  if(c==='is_active') return `<td><span class="${row[c]?'active-label':'inactive-label'}">${row[c]?'Active':'Inactive'}</span></td>`;
-  return `<td>${escapeHTML(row[c])}</td>`;
- }).join('')}
- <td>
-  <button class="ghost small"
- onclick="${config.table === 'products'
- ? `openProductEditor('${row.id}')`
- : `openEditor('${config.table === 'service_locations' ? 'locations' : config.table}','${row.id}')`}">
- Edit
-</button>
-  <button class="danger small" onclick="toggleRecord('${config.table}','${row.id}',${!row.is_active})">${row.is_active?'Deactivate':'Activate'}</button>
- </td></tr>`;
+  return `<tr>${config.columns.map(c=>{
+    if(c==='is_active') {
+      return `<td><span class="${row[c]?'active-label':'inactive-label'}">${row[c]?'Active':'Inactive'}</span></td>`;
+    }
+    return `<td>${escapeHTML(row[c])}</td>`;
+  }).join('')}
+  <td>
+    <button class="ghost small"
+      onclick="${config.table === 'products'
+        ? `openProductEditor('${row.id}')`
+        : `openEditor('${config.table === 'service_locations' ? 'locations' : config.table}','${row.id}')`}">
+      Edit
+    </button>
+    <button class="danger small"
+      onclick="toggleRecord('${config.table}','${row.id}',${!row.is_active})">
+      ${row.is_active?'Deactivate':'Activate'}
+    </button>
+    ${config.table === 'products' ? `
+      <button class="danger small"
+        onclick="deleteProduct('${row.id}')">Delete</button>
+    ` : ''}
+  </td></tr>`;
 }
 async function openProductEditor(id) {
   const bucket = 'site-media';
@@ -1012,7 +1021,27 @@ async function toggleRecord(table,id,active) {
 }
 
 function closeModal() {$('#modalRoot').innerHTML='';}
+async function deleteProduct(id) {
+  const confirmed = confirm(
+    'Kya aap is product ko permanently delete karna chahte hain?'
+  );
 
+  if (!confirmed) return;
+
+  try {
+    const { error } = await db
+      .from('products')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    notify('Product delete ho gaya.');
+    await renderPage('products');
+  } catch (error) {
+    notify(error.message || 'Product delete nahi hua.', true);
+  }
+}
 /* ========== SITE CONTENT ========== */
 async function contentPage(host) {
  const {data,error}=await db.from('site_content').select('*').order('content_key');
