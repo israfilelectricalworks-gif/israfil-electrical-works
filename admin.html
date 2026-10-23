@@ -312,16 +312,15 @@ const configs={
   ],
   columns:['title','is_active']
  },
- services:{
-  title:'Services',table:'services',
-  fields:[
-   ['title','Service Title','text',true],
-   ['description','Description','textarea',false],
-   ['sort_order','Sort Order','number',false],
-   ['is_active','Active','checkbox',false]
-  ],
-  columns:['title','is_active','sort_order']
- },
+   services:{
+   title:'Services',table:'services',
+   fields:[
+    ['title','Service Name','text',true],
+    ['description','Description','textarea',false],
+    ['is_active','Active','checkbox',false]
+   ],
+   columns:['title','is_active']
+  },
  locations:{
   title:'Service Locations',table:'service_locations',
   fields:[
@@ -826,9 +825,12 @@ function rowHTML(config,row) {
       ${row.is_active?'Deactivate':'Activate'}
     </button>
     ${config.table === 'products' ? `
-      <button class="danger small"
-        onclick="deleteProduct('${row.id}')">Delete</button>
-    ` : ''}
+  <button class="danger small"
+    onclick="deleteProduct('${row.id}')">Delete</button>
+` : config.table === 'services' ? `
+  <button class="danger small"
+    onclick="deleteService('${row.id}')">Delete</button>
+` : ''}
   </td></tr>`;
 }
 async function openProductEditor(id) {
@@ -1021,6 +1023,27 @@ async function toggleRecord(table,id,active) {
 }
 
 function closeModal() {$('#modalRoot').innerHTML='';}
+async function deleteService(id) {
+  const confirmed = confirm(
+    'Kya aap is service ko permanently delete karna chahte hain?'
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const { error } = await db
+      .from('services')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    notify('Service delete ho gayi.');
+    await renderPage('services');
+  } catch (error) {
+    notify(error.message || 'Service delete nahi hui.', true);
+  }
+}
 async function deleteProduct(id) {
   const confirmed = confirm(
     'Kya aap is product ko permanently delete karna chahte hain?'
