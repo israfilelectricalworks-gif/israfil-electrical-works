@@ -372,11 +372,125 @@ th{background:#FAF7FD;color:#695777}
   }
 }
   
+
+/* ===== LAMP SPLASH + ADMIN BACKGROUND + 3D FLIP ===== */
+
+#loginScreen.login {
+  position: relative;
+  isolation: isolate;
+  background: radial-gradient(
+    circle at 50% 25%,
+    #193f70 0%,
+    #07172f 85%
+  );
+  transition: background 1s ease;
+}
+
+/* Light splash layer */
+#loginScreen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    circle at 50% 27%,
+    #fffde8 0%,
+    #d9edff 12%,
+    #a9cfff 28%,
+    #f5f0f7 68%
+  );
+  transform: scale(.12);
+  transform-origin: 50% 27%;
+  transition:
+    transform 1s cubic-bezier(.2,.8,.2,1),
+    opacity .7s ease;
+}
+
+#loginScreen:not(.lamp-off)::before {
+  opacity: 1;
+  transform: scale(2.5);
+}
+
+/* ON: match the Admin Panel background */
+#loginScreen:not(.lamp-off) {
+  background: #F5F0F7;
+}
+
+/* Light spreads down from the bulb */
+#loginScreen .light-beam {
+  opacity: 0;
+  transform: translateX(-50%) scaleY(.15);
+  transform-origin: top center;
+  transition:
+    opacity .7s ease,
+    transform 1s ease;
+}
+
+#loginScreen:not(.lamp-off) .light-beam {
+  opacity: 1;
+  transform: translateX(-50%) scaleY(1.4);
+}
+
+/* Login card: 3D flip */
+#loginScreen .login-card {
+  transform-origin: top center;
+  transform: perspective(1000px) rotateX(-80deg) translateY(35px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    transform .8s cubic-bezier(.2,.75,.25,1),
+    opacity .45s ease,
+    visibility 0s linear .8s;
+}
+
+#loginScreen:not(.lamp-off) .login-card {
+  transform: perspective(1000px) rotateX(0deg) translateY(0);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    transform .8s cubic-bezier(.2,.75,.25,1),
+    opacity .45s ease,
+    visibility 0s;
+}
+
+/* OFF: hide form with the reverse flip */
+#loginScreen.lamp-off .login-card {
+  transform: perspective(1000px) rotateX(-80deg) translateY(35px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Bulb glow */
+#loginScreen:not(.lamp-off) .lamp-bulb {
+  background: #fffde8;
+  box-shadow:
+    0 0 22px 10px #fff7b8,
+    0 0 65px 28px #8fcaff;
+}
+
+/* Smooth shade brightness */
+#loginScreen:not(.lamp-off) .lamp-shade {
+  filter: drop-shadow(0 0 22px #80caff);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #loginScreen,
+  #loginScreen::before,
+  #loginScreen .login-card,
+  #loginScreen .light-beam {
+    transition: none !important;
+  }
+  }
   
 </style>
 </head>
 <body> 
-<section id="loginScreen" class="login">
+<section id="loginScreen" class="login lamp-off">
 <div class="hanging-lamp">
   <div class="lamp-wire"></div>
   <div class="lamp-shade"></div>
