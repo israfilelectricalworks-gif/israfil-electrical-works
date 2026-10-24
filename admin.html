@@ -356,12 +356,12 @@ th{background:#FAF7FD;color:#695777}
     width: 220px;
     height: 115px;
   }
-  .lamp-chain {
-    left: calc(50% + 98px);
-  }
-  .lamp-toggle {
-    left: calc(50% + 60px);
-  }
+  .lamp-cord {
+  left: calc(50% + 92px);
+}
+.lamp-toggle {
+  left: calc(50% + 84px);
+}
   #loginScreen .login-card {
     margin-top: 5px;
   }
@@ -385,13 +385,13 @@ th{background:#FAF7FD;color:#695777}
   <div class="lamp-shade"></div>
   <div class="lamp-bulb"></div>
   <div class="light-beam"></div>
-  <div class="lamp-chain"></div>
-  <button type="button"
-    class="lamp-toggle"
-    id="lampToggle"
-    aria-label="Turn login lamp off"
-    aria-pressed="true">
-  </button>
+  <div class="lamp-cord" id="lampCord"></div>
+<button type="button"
+  class="lamp-toggle"
+  id="lampToggle"
+  aria-label="Pull the cord to toggle lamp"
+  title="Pull the cord to switch the light"
+  aria-pressed="true"></button>
 </div>
   
   <div class="login-card">
@@ -565,19 +565,73 @@ async function boot() {
 
 $('#loginForm').addEventListener('submit',login);
 
-/* Login lamp ON/OFF */
+
+/* Pull-cord lamp ON/OFF */
 const lampToggle = document.getElementById('lampToggle');
+const lampCord = document.getElementById('lampCord');
 const loginScreen = document.getElementById('loginScreen');
 
-lampToggle.addEventListener('click', () => {
-  const isOff = loginScreen.classList.toggle('lamp-off');
+let cordStartY = 0;
+let cordPull = 0;
+let cordDragging = false;
+let cordTriggered = false;
 
-  lampToggle.setAttribute('aria-pressed', String(!isOff));
+function renderLampCord() {
+  lampToggle.style.transform =
+    'translateY(' + cordPull + 'px)';
+  lampCord.style.height = (65 + cordPull) + 'px';
+}
+
+function toggleLampLight() {
+  const isOff =
+    loginScreen.classList.toggle('lamp-off');
+
   lampToggle.setAttribute(
-    'aria-label',
-    isOff ? 'Turn login lamp on' : 'Turn login lamp off'
+    'aria-pressed', String(!isOff)
   );
+}
+
+lampToggle.addEventListener('pointerdown', event => {
+  event.preventDefault();
+  cordDragging = true;
+  cordTriggered = false;
+  cordStartY = event.clientY;
+  lampToggle.setPointerCapture(event.pointerId);
 });
+
+lampToggle.addEventListener('pointermove', event => {
+  if (!cordDragging) return;
+
+  cordPull = Math.max(
+    0, Math.min(48, event.clientY - cordStartY)
+  );
+
+  renderLampCord();
+
+  if (cordPull >= 24 && !cordTriggered) {
+    cordTriggered = true;
+    toggleLampLight();
+  }
+});
+
+function releaseLampCord() {
+  if (!cordDragging) return;
+
+  cordDragging = false;
+  cordPull = 0;
+  renderLampCord();
+}
+
+lampToggle.addEventListener('pointerup', releaseLampCord);
+lampToggle.addEventListener('pointercancel', releaseLampCord);
+
+lampToggle.addEventListener('keydown', event => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    toggleLampLight();
+  }
+});
+    
     
 $('#logoutBtn').addEventListener('click',async()=>{
  if(db) await db.auth.signOut();
