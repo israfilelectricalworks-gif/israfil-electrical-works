@@ -274,49 +274,43 @@ th{background:#FAF7FD;color:#695777}
   transition: opacity .5s ease;
 }
 
-.lamp-chain {
+
+.lamp-cord {
   position: absolute;
-  top: 195px;
-  left: calc(50% + 112px);
-  height: 55px;
-  border-left: 4px dotted #d5e9ff;
+  top: 190px;
+  left: calc(50% + 104px);
+  width: 2px;
+  height: 65px;
+  background: linear-gradient(#d5e9ff, #8aa8ca);
   z-index: 4;
+  pointer-events: none;
 }
 
 .lamp-toggle {
   position: absolute;
-  top: 243px;
-  left: calc(50% + 70px);
-  width: 90px;
-  height: 42px;
-  padding: 5px;
-  border: 2px solid #75bdff;
-  border-radius: 30px;
-  background: #126ce5;
+  top: 247px;
+  left: calc(50% + 96px);
+  width: 20px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid #d5e9ff;
+  border-radius: 50% 50% 45% 45%;
+  background: #8ecbff;
   box-shadow: 0 0 12px #268cff;
   z-index: 5;
-  cursor: pointer;
+  cursor: grab;
+  touch-action: none;
 }
 
-.lamp-toggle::after {
-  content: "";
-  display: block;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: white;
-  margin-left: auto;
-  transition: transform .35s ease;
+.lamp-toggle:active {
+  cursor: grabbing;
 }
 
 #loginScreen.lamp-off .lamp-toggle {
-  background: #374860;
+  background: #52647a;
   box-shadow: none;
 }
-
-#loginScreen.lamp-off .lamp-toggle::after {
-  transform: translateX(-46px);
-}
+  
 
 #loginScreen.lamp-off .lamp-bulb {
   background: #66758a;
@@ -356,12 +350,15 @@ th{background:#FAF7FD;color:#695777}
     width: 220px;
     height: 115px;
   }
+  
   .lamp-cord {
-  left: calc(50% + 92px);
-}
-.lamp-toggle {
-  left: calc(50% + 84px);
-}
+    left: calc(50% + 92px);
+  }
+
+  .lamp-toggle {
+    left: calc(50% + 84px);
+  }
+  
   #loginScreen .login-card {
     margin-top: 5px;
   }
@@ -396,7 +393,7 @@ th{background:#FAF7FD;color:#695777}
   
   <div class="login-card">
   <div class="logo-box">
-   <img src="https://raw.githubusercontent.com/israfilelectricalworks-gif/israfil-electrical-works/main/asset/logo.webp alt="Israfil Electrical Works"
+   <img src="https://raw.githubusercontent.com/israfilelectricalworks-gif/israfil-electrical-works/main/asset/logo.webp alt="<img src="https://raw.githubusercontent.com/israfilelectricalworks-gif/israfil-electrical-works/main/asset/logo.webp" alt="Israfil Electrical Works">"
         onerror="this.style.display='none';this.parentElement.textContent='Israfil Electrical Works'">
   </div>
   <h1>Welcome Back</h1>
@@ -419,7 +416,7 @@ th{background:#FAF7FD;color:#695777}
 <section id="appScreen" class="app hidden">
  <aside id="sidebar" class="sidebar">
   <div class="brand">
-   <img src="https://raw.githubusercontent.com/israfilelectricalworks-gif/israfil-electrical-works/main/asset/logo.webp alt="Logo"
+   <img src="https://raw.githubusercontent.com/israfilelectricalworks-gif/israfil-electrical-works/main/asset/logo.webp alt="<img src="https://raw.githubusercontent.com/israfilelectricalworks-gif/israfil-electrical-works/main/asset/logo.webp" alt="Israfil Electrical Works">"
         onerror="this.style.display='none'">
    <div class="brand-name">Israfil Electrical Works
     <small>Admin Workspace</small>
