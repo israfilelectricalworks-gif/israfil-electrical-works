@@ -852,7 +852,7 @@ async function renderPage(page) {
   else if(page==='telegram') await telegramMessagesPage(host);
   else if(page==='gmb') await gmbPage(host);
   else if(page==='content') await contentPage(host);
-  else if(page==='settings') settingsPage(host);
+  else if(page==='settings') await settingsPage(host);
  } catch(e) {
   host.innerHTML=`<div class="panel"><h3>Unable to load data</h3>
    <p class="error">${escapeHTML(e.message)}</p>
@@ -1912,55 +1912,132 @@ async function telegramMessagesPage(host) {
   });
 }
 
-/* ========== SETTINGS ========== */
-function settingsPage(host) {
- host.innerHTML=`
-  <div class="pagehead"><h1>Settings</h1></div>
+/* ========== SETTINGS + LIVE WEBSITE CONTROL ========== */
+const WEBSITE_SETTINGS_KEY = 'website_settings';
+const WEBSITE_OFFERS_KEY = 'website_offers';
 
-  <div class="panel">
-   <h2>Account</h2>
-   <p><b>Admin email:</b> ${escapeHTML(currentUser?.email)}</p>
-   <button class="gold" id="changePasswordBtn" type="button">
-    Change Password
-   </button>
-   <p class="muted">
-    Apne admin account ka password update karein.
-   </p>
-  </div>
-
-  <div class="panel">
-   <h2>Google Analytics</h2>
-   <p class="muted">
-    Website visits aur traffic reports ke liye Google connect karein.
-   </p>
-   <button class="gold" id="settingsAnalyticsBtn" type="button">
-    Connect Google Analytics
-   </button>
-   <p id="settingsAnalyticsStatus" class="muted"></p>
-  </div>
-
-  <div class="panel">
-   <h2>Google Business Profile (GMB)</h2>
-   <p class="muted">
-    Business Profile ke supported insights aur performance ke liye connect karein.
-   </p>
-   <button class="gold" id="settingsGmbBtn" type="button">
-    Connect GMB
-   </button>
-   <p id="settingsGmbStatus" class="muted"></p>
-  </div>
- `;
-
- document.getElementById('settingsAnalyticsBtn')
-  .addEventListener('click', () => renderPage('gmb'));
-
- document.getElementById('settingsGmbBtn')
-  .addEventListener('click', () => renderPage('gmb'));
-
- document.getElementById('changePasswordBtn')
-  .addEventListener('click', openChangePasswordModal);
+async function readSiteContent(key, fallback={}) {
+ const {data,error}=await db.from('site_content').select('content').eq('content_key',key).maybeSingle();
+ if(error) throw error;
+ return data?.content || fallback;
 }
-
+async function saveSiteContent(key, content) {
+ const payload={content_key:key,content,updated_by:currentUser.id,updated_at:new Date().toISOString()};
+ const {error}=await db.from('site_content').upsert(payload,{onConflict:'content_key'});
+ if(error) throw error;
+}
+async function settingsPage(host) {
+ const [s,offers]=await Promise.all([
+  readSiteContent(WEBSITE_SETTINGS_KEY,{}),
+  readSiteContent(WEBSITE_OFFERS_KEY,[])
+ ]);
+ const fields=[
+  ['site_title','Website Title','Israfil Electrical Works'],
+  ['tagline','Brand Tagline','Complete Electrical Solution'],
+  ['logo_url','Logo Image URL','asset/logo.webp'],
+  ['favicon_url','Favicon URL','asset/favicon.png'],
+  ['hero_banner_url','Homepage Banner Image URL','asset/hero-banner.webp'],
+  ['ticker_text','Top Announcement Bar Text','⚡ INDUSTRIAL & COMMERCIAL ELECTRICAL CONTRACTOR • COMPLETE ELECTRICAL SOLUTION'],
+  ['hero_heading','Homepage Main Heading',''],
+  ['hero_description','Homepage Description',''],
+  ['meta_description','SEO Meta Description','']
+ ];
+ host.innerHTML=`
+  <div class="pagehead"><div><h1>Settings & Website Control</h1><div class="muted">Yahan save kiye gaye changes live website par apply honge.</div></div></div>
+  <div class="panel"><h2>Website Branding & Homepage</h2>
+   <form id="websiteSettingsForm">
+    <div class="formgrid">${fields.map(([key,label,placeholder])=>`
+     <div class="${['ticker_text','hero_description','meta_description'].includes(key)?'span':''}">
+      <label for="ws_${key}">${label}</label>
+      ${['ticker_text','hero_description','meta_description'].includes(key)
+       ? `<textarea id="ws_${key}" name="${key}" rows="3" placeholder="${escapeHTML(placeholder)}">${escapeHTML(s[key]||'')}</textarea>`
+       : `<input id="ws_${key}" name="${key}" value="${escapeHTML(s[key]||'')}" placeholder="${escapeHTML(placeholder)}">`}
+     </div>`).join('')}
+    </div>
+    <p class="muted">Image URL mein website asset path (jaise asset/logo.webp) ya publicly accessible HTTPS image URL dein.</p>
+    <button class="gold" type="submit" id="saveWebsiteSettings">Save Website Changes</button>
+    <span id="websiteSettingsStatus" class="muted"></span>
+   </form>
+  </div>
+  <div class="panel"><div class="pagehead"><div><h2>Offers & Announcements</h2><div class="muted">Website par active offers ka banner/card dikhaya jayega.</div></div><button type="button" class="ghost" id="addOfferBtn">+ Add Offer</button></div>
+   <div id="offerEditor" class="hidden">
+    <form id="offerForm">
+     <input type="hidden" name="id">
+     <div class="formgrid">
+      <div><label>Offer Title</label><input name="title" required maxlength="100" placeholder="Special Installation Offer"></div>
+      <div><label>Offer Badge</label><input name="badge" maxlength="40" placeholder="LIMITED TIME"></div>
+      <div class="span"><label>Offer Description</label><textarea name="description" rows="2" required maxlength="400"></textarea></div>
+      <div><label>Button Text</label><input name="button_text" maxlength="40" placeholder="Enquire Now"></div>
+      <div><label>Button Link</label><input name="button_url" placeholder="/enquiry.html"></div>
+      <div><label>Start Date (optional)</label><input name="start_date" type="date"></div>
+      <div><label>End Date (optional)</label><input name="end_date" type="date"></div>
+      <div><label><input name="active" type="checkbox" checked style="width:auto"> Active</label></div>
+     </div>
+     <div class="modalactions"><button type="button" class="ghost" id="cancelOfferBtn">Cancel</button><button class="gold" type="submit">Save Offer</button></div>
+    </form>
+   </div>
+   <div id="offersList"></div>
+  </div>
+  <div class="panel"><h2>Admin Account Security</h2>
+   <p><b>Admin email:</b> ${escapeHTML(currentUser?.email)}</p>
+   <button class="gold" id="changePasswordBtn" type="button">Change Admin Password</button>
+   <p class="muted">Current password verify karke naya password set karein.</p>
+  </div>
+  <div class="panel"><h2>Google Integrations</h2>
+   <button class="ghost" id="settingsAnalyticsBtn" type="button">Google Analytics / GMB Settings</button>
+   <p class="muted">Google Analytics aur Business Profile integrations manage karein.</p>
+  </div>`;
+ const form=host.querySelector('#websiteSettingsForm');
+ form.querySelectorAll('[name]').forEach(input=>{input.value=s[input.name]??'';});
+ form.addEventListener('submit',async e=>{
+  e.preventDefault(); const btn=host.querySelector('#saveWebsiteSettings'); btn.disabled=true; btn.textContent='Saving...';
+  try {
+   const next={...s};
+   new FormData(form).forEach((v,k)=>next[k]=String(v).trim());
+   await saveSiteContent(WEBSITE_SETTINGS_KEY,next);
+   Object.assign(s,next);
+   host.querySelector('#websiteSettingsStatus').textContent=' Saved. Website changes publish ho gaye.';
+   notify('Website settings saved.');
+  } catch(err){notify(err.message||'Settings save nahi hui.',true);}
+  finally{btn.disabled=false;btn.textContent='Save Website Changes';}
+ });
+ let offerRows=Array.isArray(offers)?offers:[];
+ const editor=host.querySelector('#offerEditor'), offerForm=host.querySelector('#offerForm');
+ function drawOffers(){
+  host.querySelector('#offersList').innerHTML=offerRows.length?offerRows.map(o=>`
+   <div class="panel" style="border-style:dashed">
+    <div class="pagehead"><div><b>${escapeHTML(o.title)}</b><div class="muted">${escapeHTML(o.badge||'')} · ${o.active?'Active':'Inactive'}</div></div>
+     <div><button class="ghost small" data-edit-offer="${escapeHTML(o.id)}">Edit</button><button class="danger small" data-delete-offer="${escapeHTML(o.id)}">Delete</button></div></div>
+    <div>${escapeHTML(o.description||'')}</div>
+   </div>`).join(''):'<p class="muted">Abhi koi offer add nahi hai.</p>';
+  host.querySelectorAll('[data-edit-offer]').forEach(b=>b.onclick=()=>editOffer(b.dataset.editOffer));
+  host.querySelectorAll('[data-delete-offer]').forEach(b=>b.onclick=()=>removeOffer(b.dataset.deleteOffer));
+ }
+ function editOffer(id=''){
+  const o=offerRows.find(x=>x.id===id)||{id:'',title:'',badge:'',description:'',button_text:'Enquire Now',button_url:'/enquiry.html',start_date:'',end_date:'',active:true};
+  Object.entries(o).forEach(([k,v])=>{const el=offerForm.elements[k];if(el){if(el.type==='checkbox')el.checked=!!v;else el.value=v??'';}});
+  editor.classList.remove('hidden'); offerForm.scrollIntoView({behavior:'smooth',block:'center'});
+ }
+ async function persistOffers(){
+  await saveSiteContent(WEBSITE_OFFERS_KEY,offerRows); drawOffers(); notify('Offers updated on website.');
+ }
+ async function removeOffer(id){
+  if(!confirm('Is offer ko delete karna hai?'))return;
+  offerRows=offerRows.filter(o=>o.id!==id);
+  try{await persistOffers();}catch(err){notify(err.message,true);}
+ }
+ host.querySelector('#addOfferBtn').onclick=()=>editOffer();
+ host.querySelector('#cancelOfferBtn').onclick=()=>{editor.classList.add('hidden');offerForm.reset();};
+ offerForm.addEventListener('submit',async e=>{
+  e.preventDefault();const fd=new FormData(offerForm);const id=String(fd.get('id')||('offer-'+Date.now()));
+  const item={id,title:String(fd.get('title')).trim(),badge:String(fd.get('badge')||'').trim(),description:String(fd.get('description')).trim(),button_text:String(fd.get('button_text')||'Enquire Now').trim(),button_url:String(fd.get('button_url')||'/enquiry.html').trim(),start_date:String(fd.get('start_date')||''),end_date:String(fd.get('end_date')||''),active:offerForm.elements.active.checked};
+  const pos=offerRows.findIndex(o=>o.id===id);if(pos>=0)offerRows[pos]=item;else offerRows.push(item);
+  try{await persistOffers();editor.classList.add('hidden');offerForm.reset();}catch(err){notify(err.message,true);}
+ });
+ drawOffers();
+ host.querySelector('#settingsAnalyticsBtn').onclick=()=>renderPage('gmb');
+ host.querySelector('#changePasswordBtn').onclick=openChangePasswordModal;
+}
 function openChangePasswordModal() {
  if(!currentUser?.email) {
   notify('Admin session nahi mila. Dobara login karein.', true);
