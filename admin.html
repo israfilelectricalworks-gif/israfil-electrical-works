@@ -695,7 +695,10 @@ async function boot() {
   if(data.session && await verifyAdmin(data.session.user)) {
    currentUser=data.session.user;
    showApp();
-   await renderPage('overview');
+   // OAuth callback returns to admin.html?google_oauth=...; open the Google page
+   // instead of always resetting the admin panel to the overview dashboard.
+   const googleOAuthResult = new URLSearchParams(window.location.search).get('google_oauth');
+   await renderPage(googleOAuthResult ? 'gmb' : 'overview');
   } else {
    showLogin();
   }
