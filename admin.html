@@ -1951,9 +1951,15 @@ async function settingsPage(host) {
    <button class="gold" id="changePasswordBtn" type="button">Change Admin Password</button>
    <p class="muted">Current password verify karke naya password set karein.</p>
   </div>
-  <div class="panel"><h2>Google Integrations</h2>
-   <button class="ghost" id="settingsAnalyticsBtn" type="button">Google Analytics / GMB Settings</button>
-   <p class="muted">Google Analytics aur Business Profile integrations manage karein.</p>
+  <div class="panel"><h2>Google Analytics</h2>
+   <p class="muted">Website visitors, sessions aur traffic reports ke liye Google account authorize karein.</p>
+   <button class="gold" id="settingsAnalyticsBtn" type="button">Connect Google Analytics</button>
+   <span id="settingsAnalyticsStatus" class="muted"></span>
+  </div>
+  <div class="panel"><h2>Google Business Profile (GMB)</h2>
+   <p class="muted">Business Profile locations, reviews, posts aur performance ke liye Google account authorize karein.</p>
+   <button class="gold" id="settingsGmbBtn" type="button">Connect GMB</button>
+   <span id="settingsGmbStatus" class="muted"></span>
   </div>`;
  const form=host.querySelector('#websiteSettingsForm');
  form.querySelectorAll('input[name],textarea[name]').forEach(input=>{input.value=s[input.name]??'';});
@@ -2024,7 +2030,26 @@ async function settingsPage(host) {
   try{await persistOffers();editor.classList.add('hidden');offerForm.reset();}catch(err){notify(err.message,true);}
  });
  drawOffers();
- host.querySelector('#settingsAnalyticsBtn').onclick=()=>renderPage('gmb');
+ async function beginGoogleOAuth(buttonId,statusId){
+  const button=host.querySelector('#'+buttonId), status=host.querySelector('#'+statusId);
+  try{
+   button.disabled=true; button.textContent='Opening Google...'; status.textContent='Checking admin session...';
+   const {data:sessionData,error:sessionError}=await db.auth.getSession();
+   if(sessionError) throw sessionError;
+   const accessToken=sessionData.session?.access_token;
+   if(!accessToken) throw new Error('Pehle Admin Panel mein login karo.');
+   const {data,error}=await db.functions.invoke('google-oauth-start',{headers:{Authorization:'Bearer '+accessToken}});
+   if(error) throw error;
+   if(!data?.authorization_url) throw new Error(data?.error||'Google authorization URL nahi mila. OAuth configuration check karein.');
+   window.location.href=data.authorization_url;
+  }catch(error){
+   status.textContent='Connection failed: '+(error.message||'Unknown error');
+   button.disabled=false;
+   button.textContent=buttonId==='settingsAnalyticsBtn'?'Connect Google Analytics':'Connect GMB';
+  }
+ }
+ host.querySelector('#settingsAnalyticsBtn').onclick=()=>beginGoogleOAuth('settingsAnalyticsBtn','settingsAnalyticsStatus');
+ host.querySelector('#settingsGmbBtn').onclick=()=>beginGoogleOAuth('settingsGmbBtn','settingsGmbStatus');
  host.querySelector('#changePasswordBtn').onclick=openChangePasswordModal;
 }
 function openChangePasswordModal() {
