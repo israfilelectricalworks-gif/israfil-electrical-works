@@ -871,9 +871,8 @@ async function count(table) {
 
 
 async function overview(host) {
-  const [products, services, locations, enquiryCount, enquiryResult] =
+  const [services, locations, enquiryCount, enquiryResult] =
     await Promise.all([
-      count('products'),
       count('services'),
       count('service_locations'),
       count('enquiries'),
@@ -884,6 +883,22 @@ async function overview(host) {
     ]);
 
   if (enquiryResult.error) throw enquiryResult.error;
+
+  // Count only inbound Telegram messages; outbound admin replies are excluded.
+  const telegramRows = [];
+  let telegramLoadError = null;
+  for (let offset = 0; offset < 100000; offset += 1000) {
+    const { data, error } = await db.from('telegram_messages')
+      .select('chat_id,created_at,status')
+      .eq('direction','inbound')
+      .order('created_at',{ascending:false})
+      .range(offset,offset+999);
+    if (error) { telegramLoadError = error; break; }
+    telegramRows.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+  const telegramCustomers = new Set(telegramRows.map(m => m.chat_id).filter(Boolean)).size;
+  const telegramUnread = telegramRows.filter(m => m.status === 'unread').length;
 
   const latestEnquiries = enquiryResult.data || [];
 const { data: allEnquiries, error: reportError } = await db
@@ -983,10 +998,10 @@ function filterReportRows() {
     </div>
 
     <div class="cards">
-      <div class="card purple">
-        <div>Products</div>
-        <div class="stat">${products}</div>
-        <div>Product records</div>
+      <div class="card purple" onclick="renderPage('telegram')" style="cursor:pointer">
+        <div>💬 Telegram Customers</div>
+        <div class="stat">${telegramLoadError ? '—' : telegramCustomers}</div>
+        <div>${telegramLoadError ? 'Telegram data unavailable' : `${telegramUnread} unread messages · Open Inbox →`}</div>
       </div>
       <div class="card turquoise"
      onclick="document.getElementById('websiteTrafficPanel').scrollIntoView({behavior:'smooth',block:'start'})"
@@ -1029,6 +1044,19 @@ function filterReportRows() {
   <div style="position:relative;height:280px">
     <canvas id="gmbPerformanceChart"></canvas>
   </div>
+</div>
+<div class="panel" id="telegramAnalyticsPanel">
+  <div class="pagehead">
+    <div>
+      <h2 style="margin:0 0 6px">Telegram Customer Messages</h2>
+      <p class="muted" id="telegramGraphSummary">Incoming customer questions only</p>
+    </div>
+    <select id="telegramGraphPeriod" aria-label="Telegram graph period">
+      <option value="7">Last 7 Days</option>
+      <option value="30">Last 30 Days</option>
+    </select>
+  </div>
+  <div style="position:relative;height:270px"><canvas id="telegramMessagesChart"></canvas></div>
 </div>
 <div class="panel">
   <h2>Enquiry Report</h2>
@@ -1154,6 +1182,40 @@ function filterReportRows() {
 if (typeof Chart === 'undefined') {
   throw new Error('Chart.js load nahi hua. Internet connection check karein.');
 }
+
+const telegramMessagesChart = new Chart(document.getElementById('telegramMessagesChart'), {
+  type:'line',
+  data:{labels:[],datasets:[{
+    label:'Customer messages',data:[],borderColor:'#8B5CF6',
+    backgroundColor:'rgba(139,92,246,0.12)',fill:true,tension:0.3
+  }]},
+  options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{precision:0}}}}
+});
+function updateTelegramGraph(){
+  const days = Number(document.getElementById('telegramGraphPeriod').value);
+  const dates = [];
+  const counts = [];
+  const now = new Date();
+  const localDay = d => [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+  const byDate = {};
+  for(let i=days-1;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i);
+    const key=localDay(d);dates.push(key);byDate[key]=0;
+  }
+  for(const msg of telegramRows){
+    const key=localDay(new Date(msg.created_at));
+    if(Object.prototype.hasOwnProperty.call(byDate,key))byDate[key]++;
+  }
+  for(const day of dates)counts.push(byDate[day]);
+  telegramMessagesChart.data.labels=dates;
+  telegramMessagesChart.data.datasets[0].data=counts;
+  telegramMessagesChart.update();
+  document.getElementById('telegramGraphSummary').textContent=telegramLoadError
+    ? 'Telegram data load failed: '+telegramLoadError.message
+    : counts.reduce((a,b)=>a+b,0)+' incoming messages in last '+days+' days · '+telegramCustomers+' total customers';
+}
+document.getElementById('telegramGraphPeriod').addEventListener('change',updateTelegramGraph);
+updateTelegramGraph();
 
 const trendChart = new Chart(
   document.getElementById('enquiryTrendChart'),
