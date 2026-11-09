@@ -1880,9 +1880,102 @@ function settingsPage(host) {
   .addEventListener('click', () => renderPage('gmb'));
 
  document.getElementById('changePasswordBtn')
-  .addEventListener('click', () => {
-   notify('Password change form abhi implement karna baaki hai.', true);
+  .addEventListener('click', openChangePasswordModal);
+}
+
+function openChangePasswordModal() {
+ if(!currentUser?.email) {
+  notify('Admin session nahi mila. Dobara login karein.', true);
+  return;
+ }
+
+ $('#modalRoot').innerHTML = `
+  <div class="modalbg" id="passwordModalBg">
+   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="passwordModalTitle">
+    <h2 id="passwordModalTitle">Change Admin Password</h2>
+    <p class="muted">Security ke liye current password verify hoga. Naya password kam se kam 12 characters ka rakhein.</p>
+    <form id="changePasswordForm">
+     <label for="currentAdminPassword">Current password</label>
+     <input id="currentAdminPassword" type="password" required
+       autocomplete="current-password" placeholder="Current password">
+     <label for="newAdminPassword">New password</label>
+     <input id="newAdminPassword" type="password" required minlength="12"
+       autocomplete="new-password" placeholder="At least 12 characters">
+     <label for="confirmAdminPassword">Confirm new password</label>
+     <input id="confirmAdminPassword" type="password" required minlength="12"
+       autocomplete="new-password" placeholder="Enter new password again">
+     <div id="changePasswordError" class="error" role="alert"></div>
+     <div class="modalactions">
+      <button type="button" class="ghost" id="cancelPasswordChange">Cancel</button>
+      <button type="submit" class="gold" id="saveNewPassword">Update Password</button>
+     </div>
+    </form>
+   </div>
+  </div>`;
+
+ $('#cancelPasswordChange').addEventListener('click', closeModal);
+ $('#passwordModalBg').addEventListener('click', event => {
+  if(event.target.id === 'passwordModalBg') closeModal();
+ });
+ $('#changePasswordForm').addEventListener('submit', updateAdminPassword);
+ $('#currentAdminPassword').focus();
+}
+
+async function updateAdminPassword(event) {
+ event.preventDefault();
+ const errorBox = $('#changePasswordError');
+ const submitButton = $('#saveNewPassword');
+ const currentPassword = $('#currentAdminPassword').value;
+ const newPassword = $('#newAdminPassword').value;
+ const confirmPassword = $('#confirmAdminPassword').value;
+
+ errorBox.textContent = '';
+ if(newPassword.length < 12) {
+  errorBox.textContent = 'Naya password kam se kam 12 characters ka hona chahiye.';
+  return;
+ }
+ if(newPassword !== confirmPassword) {
+  errorBox.textContent = 'New password aur confirmation match nahi karte.';
+  return;
+ }
+ if(newPassword === currentPassword) {
+  errorBox.textContent = 'Naya password current password se alag hona chahiye.';
+  return;
+ }
+
+ submitButton.disabled = true;
+ submitButton.textContent = 'Updating...';
+ try {
+  initClient();
+  const {data,error:loginError} = await db.auth.signInWithPassword({
+   email: currentUser.email,
+   password: currentPassword
   });
+  if(loginError) throw new Error('Current password galat hai. Password update nahi hua.');
+  if(!await verifyAdmin(data.user)) {
+   await db.auth.signOut();
+   currentUser = null;
+   showLogin('Admin authorization verify nahi hua. Dobara sign in karein.');
+   closeModal();
+   return;
+  }
+
+  const {error:updateError} = await db.auth.updateUser({password:newPassword});
+  if(updateError) throw updateError;
+
+  const {data:refreshData,error:refreshError} = await db.auth.getUser();
+  if(refreshError) throw refreshError;
+  currentUser = refreshData.user;
+  closeModal();
+  notify('Admin password successfully update ho gaya.');
+ } catch(error) {
+  errorBox.textContent = error.message || 'Password update nahi ho saka.';
+ } finally {
+  if($('#saveNewPassword')) {
+   $('#saveNewPassword').disabled = false;
+   $('#saveNewPassword').textContent = 'Update Password';
+  }
+ }
 }
 
 async function refreshSession() {
