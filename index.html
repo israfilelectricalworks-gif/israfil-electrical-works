@@ -1680,7 +1680,7 @@ if (stats) {
   if(sErr) throw sErr; if(oErr) throw oErr;
   const s=settingsRow?.content||{};
   const setText=(selector,value)=>{if(value){const el=document.querySelector(selector);if(el)el.textContent=value;}};
-  if(s.site_title){document.title=s.site_title;setText('.brand-text',s.site_title);}
+  if(s.site_title){document.title=s.site_title;const brand=document.querySelector('.brand-text');if(brand){const textNode=Array.from(brand.childNodes).find(n=>n.nodeType===3);if(textNode)textNode.textContent=s.site_title;else brand.insertBefore(document.createTextNode(s.site_title),brand.firstChild);}}
   if(s.tagline){const small=document.querySelector('.brand-text small');if(small)small.textContent=s.tagline;}
   if(s.logo_url)document.querySelectorAll('.brand-logo').forEach(el=>el.src=s.logo_url);
   if(s.favicon_url){let f=document.querySelector('link[rel~="icon"]');if(!f){f=document.createElement('link');f.rel='icon';document.head.appendChild(f);}f.href=s.favicon_url;}
