@@ -131,7 +131,7 @@ label{display:block;margin:14px 0 6px;font-weight:bold;font-size:13px}
 .app{min-height:100vh;display:grid;grid-template-columns:245px minmax(0,1fr)}
 .sidebar{background:white;border-right:1px solid var(--line);padding:18px 13px}
 .brand{display:flex;align-items:center;gap:11px;padding:8px 7px 22px;font-weight:bold}
-.brand img{width:44px;height:44px;object-fit:contain;border-radius:10px}
+.brand img{width:44px;height:44px;object-fit:contain;border-radius:10px;flex:0 0 44px}
 .brand-name{line-height:1.4}
 .brand-name small{display:block;font-size:11px;color:#887c95;font-weight:normal}
 .nav-title{font-size:11px;color:#9b8da8;margin:14px 12px 8px;text-transform:uppercase;letter-spacing:1px}
@@ -139,14 +139,14 @@ label{display:block;margin:14px 0 6px;font-weight:bold;font-size:13px}
 .nav button.active,.nav button:hover{background:#f0e7ff;color:var(--purple)}
 .nav button.active{font-weight:bold}
 main{min-width:0}
-.topbar{background:white;border-bottom:3px solid var(--turquoise);padding:13px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:75px}
+.topbar{position:relative;z-index:2;background:white;border-bottom:3px solid var(--turquoise);padding:13px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:75px;flex-wrap:wrap}
 .header-brand{display:flex;align-items:center;gap:12px;min-width:0}
 .header-logo{width:43px;height:43px;object-fit:contain;border-radius:9px}
-.header-titles{min-width:0}
+.header-titles{min-width:0;line-height:1.35;overflow-wrap:anywhere}
 .header-titles strong{display:block;font-size:15px}
 #topTitle{margin-top:4px}
 .header-actions{display:flex;align-items:center;gap:10px}
-.content{padding:22px;max-width:1300px;margin:auto}
+.content{position:relative;z-index:1;padding:22px;max-width:1300px;margin:0 auto;clear:both}
 .cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:20px 0}
 .card{position:relative;overflow:hidden;color:white;border-radius:13px;padding:22px;min-height:145px}
 .card:after{content:"";position:absolute;width:130px;height:130px;border-radius:50%;background:#ffffff25;right:-35px;top:-20px}
@@ -187,10 +187,10 @@ th{background:#FAF7FD;color:#695777}
  .card{padding:16px;min-height:125px}
  .stat{font-size:25px}
  .panel{padding:14px}
- .topbar{padding:12px}
+ .topbar{padding:12px;align-items:center}
  .header-logo{width:36px;height:36px}
  .header-titles strong{font-size:13px}
- .header-actions{gap:5px}
+ .header-actions{gap:5px;flex-shrink:0}
  .formgrid{grid-template-columns:1fr}
  .formgrid .span{grid-column:auto}
 }
@@ -529,8 +529,7 @@ th{background:#FAF7FD;color:#695777}
 <section id="appScreen" class="app hidden">
  <aside id="sidebar" class="sidebar">
   <div class="brand">
-   <img src="https://raw.githubusercontent.com/israfilelectricalworks-gif/israfil-electrical-works/main/asset/logo.webp alt="<img src="https://raw.githubusercontent.com/israfilelectricalworks-gif/israfil-electrical-works/main/asset/logo.webp" alt="Israfil Electrical Works">"
-        onerror="this.style.display='none'">
+   <img src="https://raw.githubusercontent.com/israfilelectricalworks-gif/israfil-electrical-works/main/asset/logo.webp" alt="Israfil Electrical Works" class="sidebar-logo">
    <div class="brand-name">Israfil Electrical Works
     <small>Admin Workspace</small>
    </div>
@@ -555,7 +554,7 @@ th{background:#FAF7FD;color:#695777}
    <div class="header-brand">
     <button id="menuBtn" class="ghost mobile" type="button">☰</button>
     <img src="https://raw.githubusercontent.com/israfilelectricalworks-gif/israfil-electrical-works/main/asset/logo.webp" alt="Israfil Electrical Works Logo"
-         class="header-logo" onerror="this.style.display='none'">
+         class="header-logo">
     <div class="header-titles">
      <strong>Israfil Electrical Works</strong>
      <div id="topTitle" class="muted">Dashboard</div>
