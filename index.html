@@ -1667,5 +1667,33 @@ if (stats) {
 })();
 </script>
 <script type="module" src="/cube-game.js"></script>
+
+<script>
+/* Live website settings and offers from Supabase */
+(async function(){
+ try {
+  const client=window.supabase.createClient('https://xkgkegsjutozmyxdarns.supabase.co','sb_publishable_LlhBoPAZcnDX0rxvg7pJGQ_XIbvz5by');
+  const [{data:settingsRow,error:sErr},{data:offersRow,error:oErr}]=await Promise.all([
+   client.from('site_content').select('content').eq('content_key','website_settings').maybeSingle(),
+   client.from('site_content').select('content').eq('content_key','website_offers').maybeSingle()
+  ]);
+  if(sErr) throw sErr; if(oErr) throw oErr;
+  const s=settingsRow?.content||{};
+  const setText=(selector,value)=>{if(value){const el=document.querySelector(selector);if(el)el.textContent=value;}};
+  if(s.site_title){document.title=s.site_title;setText('.brand-text',s.site_title);}
+  if(s.tagline){const small=document.querySelector('.brand-text small');if(small)small.textContent=s.tagline;}
+  if(s.logo_url)document.querySelectorAll('.brand-logo').forEach(el=>el.src=s.logo_url);
+  if(s.favicon_url){let f=document.querySelector('link[rel~="icon"]');if(!f){f=document.createElement('link');f.rel='icon';document.head.appendChild(f);}f.href=s.favicon_url;}
+  if(s.hero_banner_url){const img=document.querySelector('.hero-frame img');if(img)img.src=s.hero_banner_url;}
+  if(s.meta_description){let m=document.querySelector('meta[name="description"]');if(!m){m=document.createElement('meta');m.name='description';document.head.appendChild(m);}m.content=s.meta_description;}
+  if(s.ticker_text){document.querySelectorAll('.ticker-track span').forEach(el=>el.textContent=s.ticker_text+' • ');}
+  if(s.hero_heading||s.hero_description){let block=document.getElementById('adminHeroCopy');if(!block){block=document.createElement('div');block.id='adminHeroCopy';block.style.cssText='text-align:center;color:#fff;padding:12px 8px 0';document.querySelector('.hero-frame')?.after(block);}block.innerHTML='';if(s.hero_heading){const h=document.createElement('h1');h.textContent=s.hero_heading;h.style.margin='8px 0';block.appendChild(h);}if(s.hero_description){const p=document.createElement('p');p.textContent=s.hero_description;p.style.margin='6px 0';block.appendChild(p);}}
+  const offers=Array.isArray(offersRow?.content)?offersRow.content:[];
+  const today=new Date();today.setHours(0,0,0,0);
+  const active=offers.filter(o=>o.active&&(!o.start_date||new Date(o.start_date+'T00:00:00')<=today)&&(!o.end_date||new Date(o.end_date+'T23:59:59')>=today));
+  if(active.length){const section=document.createElement('section');section.id='adminOffers';section.style.cssText='padding:28px 0;background:#102b46';const wrap=document.createElement('div');wrap.className='wrap';wrap.style.cssText='display:grid;gap:14px';active.forEach(o=>{const card=document.createElement('div');card.style.cssText='padding:22px;border:1px solid rgba(242,183,45,.45);border-radius:18px;background:linear-gradient(120deg,#14324f,#0b2036);color:#fff';const badge=document.createElement('small');badge.textContent=o.badge||'SPECIAL OFFER';badge.style.cssText='color:#ffd86a;font-weight:900;letter-spacing:1px';const h=document.createElement('h2');h.textContent=o.title;h.style.cssText='font-size:clamp(22px,3vw,32px);margin:8px 0';const p=document.createElement('p');p.textContent=o.description||'';p.style.color='#c3d0dc';card.append(badge,h,p);if(o.button_text){const a=document.createElement('a');a.className='btn gold';a.textContent=o.button_text;a.href=o.button_url||'/enquiry.html';card.appendChild(a);}wrap.appendChild(card);});section.appendChild(wrap);const hero=document.querySelector('.hero');if(hero)hero.after(section);}
+ } catch(e){console.warn('Website live settings could not load:',e.message);}
+})();
+</script>
 </body>
 </html>
