@@ -1829,7 +1829,7 @@ async function telegramMessagesPage(host) {
   const params = new URLSearchParams(window.location.search);
   const oauthResult = params.get('google_oauth');
   const messages = {
-    connected: 'Google account authorization completed. Checking connection...',
+    connected: 'CONNECTED: Google account authorization successful. Access and refresh tokens are securely saved in Supabase. You can now proceed to configure Business Profile locations and GA4 reporting.',
     cancelled: 'Google authorization was cancelled.',
     setup_error: 'Google OAuth configuration incomplete. Admin setup is required.',
     state_error: 'Security verification failed. Please try connecting again.',
