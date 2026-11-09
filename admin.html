@@ -544,6 +544,7 @@ th{background:#FAF7FD;color:#695777}
    <button data-page="gmb">📊 GMB Management</button>
    <button data-page="content">▤ Site Content</button>
    <button data-page="enquiries">📩 Enquiries</button>
+   <button data-page="telegram">💬 Telegram Messages</button>
    <button data-page="settings">⚙ Settings</button>
   </nav>
   <div class="notice">Manage your website content from one place.</div>
@@ -835,6 +836,7 @@ async function renderPage(page) {
   gmb:'GMB Management',
   content:'Site Content',
   enquiries:'Enquiries',
+  telegram:'Telegram Messages',
   settings:'Settings'
 };
  $('#topTitle').textContent=titles[page]||page;
@@ -847,6 +849,7 @@ async function renderPage(page) {
   if(page==='overview') await overview(host);
   else if(configs[page]) await listing(host,page);
   else if(page==='enquiries') await enquiriesPage(host);
+  else if(page==='telegram') await telegramMessagesPage(host);
   else if(page==='gmb') await gmbPage(host);
   else if(page==='content') await contentPage(host);
   else if(page==='settings') settingsPage(host);
@@ -1775,6 +1778,50 @@ async function enquiriesPage(host) {
   search.addEventListener('input', draw);
   filter.addEventListener('change', draw);
   draw();
+}
+
+async function telegramMessagesPage(host) {
+ const {data,error}=await db.from('telegram_messages').select('*').order('created_at',{ascending:true}).limit(1000);
+ if(error) throw error;
+ const rows=data||[];
+ const chats={};
+ rows.forEach(m=>{if(!chats[m.chat_id]) chats[m.chat_id]=[];chats[m.chat_id].push(m);});
+ const chatIds=Object.keys(chats).sort((a,b)=>new Date(chats[b].at(-1).created_at)-new Date(chats[a].at(-1).created_at));
+ host.innerHTML=`
+ <div class="pagehead"><div><h1>Telegram Messages</h1><div class="muted">Customer questions and direct replies · ${chatIds.length} chats</div></div><button class="gold" id="refreshTelegram">Refresh</button></div>
+ <div class="formgrid" style="grid-template-columns:minmax(220px, .8fr) minmax(0,2fr);align-items:start">
+  <div class="panel" style="padding:10px"><h3>Inbox</h3><input id="telegramSearch" placeholder="Search customer or message">
+   <div id="telegramChatList" style="margin-top:10px;max-height:65vh;overflow:auto"></div></div>
+  <div class="panel"><div id="telegramConversation"><p class="muted">Select a chat to view the conversation and reply.</p></div></div>
+ </div>`;
+ const chatList=host.querySelector('#telegramChatList'), conversation=host.querySelector('#telegramConversation'), search=host.querySelector('#telegramSearch');
+ let activeChat=null;
+ function drawChats(){
+  const q=search.value.toLowerCase();
+  const filtered=chatIds.filter(id=>{const ms=chats[id],last=ms.at(-1);return (last.customer_name||'').toLowerCase().includes(q)||ms.some(m=>m.message_text.toLowerCase().includes(q));});
+  chatList.innerHTML=filtered.length?filtered.map(id=>{const ms=chats[id],last=ms.at(-1),unread=ms.filter(m=>m.direction==='inbound'&&m.status==='unread').length;return `<button type="button" data-chat="${escapeHTML(id)}" class="ghost" style="display:block;width:100%;text-align:left;margin:5px 0;white-space:normal"><b>${escapeHTML(last.customer_name||last.username||'Telegram Customer')}</b> ${unread?`<span class="badge">${unread} new</span>`:''}<div class="muted">${escapeHTML(last.message_text.slice(0,75))}</div><small>${new Date(last.created_at).toLocaleString('en-IN')}</small></button>`;}).join(''):'<p class="muted">No messages found.</p>';
+  chatList.querySelectorAll('[data-chat]').forEach(b=>b.addEventListener('click',()=>openChat(b.dataset.chat)));
+ }
+ async function openChat(id){
+  activeChat=id;const ms=chats[id]||[],first=ms.find(m=>m.direction==='inbound');
+  const {error:readError}=await db.from('telegram_messages').update({status:'read'}).eq('chat_id',id).eq('direction','inbound').eq('status','unread');
+  if(readError) notify(readError.message,true);
+  ms.forEach(m=>{if(m.direction==='inbound'&&m.status==='unread')m.status='read';});
+  conversation.innerHTML=`<h3>${escapeHTML(first?.customer_name||first?.username||'Telegram Customer')}</h3><div class="muted">Telegram Chat ID: ${escapeHTML(id)}</div><div id="telegramThread" style="max-height:48vh;overflow:auto;margin:15px 0;padding:10px;background:#FAF7FD;border-radius:10px">${ms.map(m=>`<div style="display:flex;justify-content:${m.direction==='outbound'?'flex-end':'flex-start'};margin:9px 0"><div style="max-width:88%;padding:11px;border-radius:12px;background:${m.direction==='outbound'?'#E9F8F4':'white'}"><div style="font-size:10px;color:#81758C;margin-bottom:5px">${m.direction==='outbound'?'Admin':'Customer'} · ${new Date(m.created_at).toLocaleString('en-IN')}</div><div style="white-space:pre-wrap;overflow-wrap:anywhere">${escapeHTML(m.message_text)}</div></div></div>`).join('')}</div><form id="telegramReplyForm"><label for="telegramReplyText">Reply to customer</label><textarea id="telegramReplyText" rows="3" maxlength="4000" required placeholder="Type your reply..."></textarea><div class="modalactions"><button class="gold" type="submit">Send Telegram Reply</button></div><p class="muted" id="telegramReplyStatus"></p></form>`;
+  const thread=conversation.querySelector('#telegramThread');thread.scrollTop=thread.scrollHeight;
+  conversation.querySelector('#telegramReplyForm').addEventListener('submit',async ev=>{
+   ev.preventDefault();const btn=ev.submitter,box=conversation.querySelector('#telegramReplyText'),status=conversation.querySelector('#telegramReplyStatus'),message=box.value.trim();if(!message)return;
+   btn.disabled=true;btn.textContent='Sending...';status.textContent='';
+   try{const {data:sessionData}=await db.auth.getSession();const accessToken=sessionData.session?.access_token;if(!accessToken)throw new Error('Admin session expired. Please sign in again.');
+    const resp=await fetch(`${SUPABASE_URL}/functions/v1/admin-telegram-reply`,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY,'Authorization':`Bearer ${accessToken}`},body:JSON.stringify({chat_id:id,message,reply_to:ms.filter(m=>m.direction==='inbound').at(-1)?.id})});
+    const result=await resp.json();if(!resp.ok)throw new Error(result.error||'Reply failed');
+    notify('Reply sent on Telegram');await telegramMessagesPage(host);
+   }catch(e){status.textContent=e.message;btn.disabled=false;btn.textContent='Send Telegram Reply';}
+  });
+  drawChats();
+ }
+ search.addEventListener('input',drawChats);host.querySelector('#refreshTelegram').addEventListener('click',()=>telegramMessagesPage(host));drawChats();
+ if(chatIds.length) await openChat(chatIds[0]);
 }
     function gmbPage(host) {
   host.innerHTML = `
