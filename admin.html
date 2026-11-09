@@ -1822,91 +1822,55 @@ async function telegramMessagesPage(host) {
  search.addEventListener('input',drawChats);host.querySelector('#refreshTelegram').addEventListener('click',()=>telegramMessagesPage(host));drawChats();
  if(chatIds.length) await openChat(chatIds[0]);
 }
-    function gmbPage(host) {
+    async function gmbPage(host) {
+  const params = new URLSearchParams(window.location.search);
+  const oauthResult = params.get('google_oauth');
+  const messages = {
+    connected: 'Google account authorization completed. Checking connection...',
+    cancelled: 'Google authorization was cancelled.',
+    setup_error: 'Google OAuth configuration incomplete. Admin setup is required.',
+    state_error: 'Security verification failed. Please try connecting again.',
+    token_exchange_error: 'Google token exchange failed. Check OAuth client settings.',
+    refresh_token_missing: 'Google did not return offline access. Reconnect and approve consent.',
+    token_storage_error: 'Google authorization succeeded but secure token storage failed.',
+    server_error: 'Google connection failed due to a server error.'
+  };
   host.innerHTML = `
-    <div class="pagehead">
-      <div>
-        <h1>GMB Management</h1>
-        <div class="muted">
-          Google Business Profile reports and management
-        </div>
-      </div>
-    </div>
-
+    <div class="pagehead"><div><h1>Google Business Profile & Analytics</h1><div class="muted">Connect Google once to authorize supported Business Profile and GA4 reporting.</div></div></div>
     <div class="panel">
-      <h2>Profile Performance</h2>
-      <p class="muted">
-        Views, calls, chat clicks, bookings, directions
-        and website clicks.
-      </p>
-      <p id="gmbManagementStatus" class="notice">
-        Google authorization pending.
-      </p>
-      
+      <h2>Google Account Connection</h2>
+      <p class="muted">Use the Google account that has Owner or Manager access to your Business Profile and Viewer or higher access to your GA4 property.</p>
+      <p id="gmbManagementStatus" class="notice">${messages[oauthResult] || 'Google account not yet connected. Connect to continue.'}</p>
+      <button id="connectGoogleAnalyticsBtn" class="gold" type="button">Connect Google Account</button>
+      <p class="muted">Google will ask you to approve access for Business Profile management and Analytics read-only reports.</p>
     </div>
-
     <div class="panel">
-      <h2>Reviews & Posts</h2>
-      <p class="muted">
-        Reviews, replies and posts will be enabled after
-        Google API authorization and permission checks.
-      </p>
+      <h2>Google Business Profile</h2>
+      <p class="muted">After authorization, we can load eligible locations, profile performance, reviews and posts for the connected account.</p>
     </div>
-
     <div class="panel">
-      <h2>Business Information</h2>
-      <p class="muted">
-        Profile details and supported editing options
-        will appear after the connection is verified.
-      </p>
-    </div>
-  `;
-
-  const connectGoogleBtn = document.getElementById(
-    'connectGoogleAnalyticsBtn'
-  );
-
-  if (!connectGoogleBtn) return;
-
+      <h2>Google Analytics 4</h2>
+      <p class="muted">After authorization, select the GA4 property to view website users, sessions, traffic sources and engagement reports.</p>
+    </div>`;
+  const connectGoogleBtn = host.querySelector('#connectGoogleAnalyticsBtn');
+  const status = host.querySelector('#gmbManagementStatus');
   connectGoogleBtn.addEventListener('click', async () => {
-    const status = document.getElementById('gmbManagementStatus');
-
     try {
       connectGoogleBtn.disabled = true;
-      status.textContent = 'Connecting to Google...';
-
-      const { data: sessionData, error: sessionError } =
-        await db.auth.getSession();
-
-      if (sessionError) throw sessionError;
-
-      const accessToken = sessionData.session?.access_token;
-
-      if (!accessToken) {
-        throw new Error('Pehle Admin Panel mein login karo.');
-      }
-
-      const { data, error } = await db.functions.invoke(
-        'google-oauth-start',
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        }
-      );
-
-      if (error) throw error;
-
-      if (!data?.authorization_url) {
-        throw new Error(data?.error || 'Google URL nahi mila.');
-      }
-
-      window.location.href = data.authorization_url;
-    } catch (error) {
-      status.textContent =
-        'Connection failed: ' + (error.message || 'Unknown error');
-
-      connectGoogleBtn.disabled = false;
+      connectGoogleBtn.textContent = 'Opening Google...';
+      status.textContent = 'Checking admin session...';
+      const {data:sessionData,error:sessionError}=await db.auth.getSession();
+      if(sessionError) throw sessionError;
+      const accessToken=sessionData.session?.access_token;
+      if(!accessToken) throw new Error('Pehle Admin Panel mein login karo.');
+      const {data,error}=await db.functions.invoke('google-oauth-start',{headers:{Authorization:`Bearer ${accessToken}`}});
+      if(error) throw error;
+      if(!data?.authorization_url) throw new Error(data?.error||'Google authorization URL nahi mila. OAuth secrets/configuration check karein.');
+      window.location.href=data.authorization_url;
+    } catch(error) {
+      status.textContent='Connection failed: '+(error.message||'Unknown error');
+      connectGoogleBtn.disabled=false;
+      connectGoogleBtn.textContent='Connect Google Account';
     }
   });
 }
