@@ -828,7 +828,7 @@ const configs={
  }
 };
 
-async function renderPage(page) {
+async function renderPage(page, selectedTelegramChat = null) {
  currentPage=page;
  const titles={
   overview:'Dashboard',
@@ -851,7 +851,7 @@ async function renderPage(page) {
   if(page==='overview') await overview(host);
   else if(configs[page]) await listing(host,page);
   else if(page==='enquiries') await enquiriesPage(host);
-  else if(page==='telegram') await telegramMessagesPage(host);
+  else if(page==='telegram') await telegramMessagesPage(host, selectedTelegramChat);
   else if(page==='gmb') await gmbPage(host);
   else if(page==='content') await contentPage(host);
   else if(page==='settings') await settingsPage(host);
@@ -889,7 +889,7 @@ async function overview(host) {
   let telegramLoadError = null;
   for (let offset = 0; offset < 100000; offset += 1000) {
     const { data, error } = await db.from('telegram_messages')
-      .select('chat_id,created_at,status')
+      .select('chat_id,telegram_user_id,customer_name,username,created_at,status')
       .eq('direction','inbound')
       .order('created_at',{ascending:false})
       .range(offset,offset+999);
@@ -1058,6 +1058,13 @@ function filterReportRows() {
   </div>
   <div style="position:relative;height:270px"><canvas id="telegramMessagesChart"></canvas></div>
 </div>
+<div class="panel" id="telegramCustomerPanel">
+  <div class="pagehead">
+    <div><h2 style="margin:0 0 6px">Telegram Customers</h2><p class="muted" id="telegramCustomerCount">Customer accounts</p></div>
+    <button class="ghost" id="telegramSeeAll" type="button" style="display:none">See All</button>
+  </div>
+  <div id="telegramCustomerList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px"></div>
+</div>
 <div class="panel">
   <h2>Enquiry Report</h2>
 
@@ -1216,6 +1223,36 @@ function updateTelegramGraph(){
 }
 document.getElementById('telegramGraphPeriod').addEventListener('change',updateTelegramGraph);
 updateTelegramGraph();
+
+// Build a latest-message-first customer directory, one row per Telegram chat.
+const customerMap = new Map();
+for (const msg of telegramRows) {
+  if (!msg.chat_id) continue;
+  const prior = customerMap.get(msg.chat_id);
+  if (!prior || new Date(msg.created_at) > new Date(prior.created_at)) customerMap.set(msg.chat_id,msg);
+}
+const telegramCustomerList = [...customerMap.values()].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+let showAllTelegramCustomers = false;
+const customerListEl = document.getElementById('telegramCustomerList');
+const seeAllTelegramButton = document.getElementById('telegramSeeAll');
+function drawTelegramCustomers(){
+  const visible = showAllTelegramCustomers ? telegramCustomerList : telegramCustomerList.slice(0,10);
+  document.getElementById('telegramCustomerCount').textContent =
+    telegramCustomerList.length+' unique Telegram customers · showing '+visible.length;
+  seeAllTelegramButton.style.display = telegramCustomerList.length>10 ? '' : 'none';
+  seeAllTelegramButton.textContent = showAllTelegramCustomers ? 'Show Less' : 'See All ('+telegramCustomerList.length+')';
+  customerListEl.innerHTML = visible.length ? visible.map(customer=>{
+    const id=customer.chat_id;
+    const displayName=customer.customer_name||customer.username||'Telegram Customer';
+    const telegramId=customer.telegram_user_id||id;
+    return '<button type="button" class="ghost telegram-customer-link" data-telegram-chat="'+escapeHTML(id)+'" style="text-align:left;padding:12px;white-space:normal"><b>'+escapeHTML(displayName)+'</b><div class="muted">Telegram ID: '+escapeHTML(telegramId)+'</div><small class="muted">Chat ID: '+escapeHTML(id)+'</small></button>';
+  }).join('') : '<p class="muted">No Telegram customers yet.</p>';
+  customerListEl.querySelectorAll('[data-telegram-chat]').forEach(button=>{
+    button.addEventListener('click',()=>renderPage('telegram',button.dataset.telegramChat));
+  });
+}
+seeAllTelegramButton.addEventListener('click',()=>{showAllTelegramCustomers=!showAllTelegramCustomers;drawTelegramCustomers();});
+drawTelegramCustomers();
 
 const trendChart = new Chart(
   document.getElementById('enquiryTrendChart'),
@@ -1844,7 +1881,7 @@ async function enquiriesPage(host) {
   draw();
 }
 
-async function telegramMessagesPage(host) {
+async function telegramMessagesPage(host, selectedChat = null) {
  const {data,error}=await db.from('telegram_messages').select('*').order('created_at',{ascending:true}).limit(1000);
  if(error) throw error;
  const rows=data||[];
@@ -1885,7 +1922,7 @@ async function telegramMessagesPage(host) {
   drawChats();
  }
  search.addEventListener('input',drawChats);host.querySelector('#refreshTelegram').addEventListener('click',()=>telegramMessagesPage(host));drawChats();
- if(chatIds.length) await openChat(chatIds[0]);
+ if(selectedChat && chats[selectedChat]) await openChat(selectedChat);\n else if(chatIds.length) await openChat(chatIds[0]);
 }
     async function gmbPage(host) {
   const params = new URLSearchParams(window.location.search);
