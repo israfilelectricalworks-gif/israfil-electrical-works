@@ -1898,7 +1898,8 @@ async function telegramMessagesPage(host, selectedChat = null) {
   drawChats();
  }
  search.addEventListener('input',drawChats);host.querySelector('#refreshTelegram').addEventListener('click',()=>telegramMessagesPage(host));drawChats();
- if(selectedChat && chats[selectedChat]) await openChat(selectedChat);\n else if(chatIds.length) await openChat(chatIds[0]);
+ if(selectedChat && chats[selectedChat]) await openChat(selectedChat);
+ else if(chatIds.length) await openChat(chatIds[0]);
 }
     async function gmbPage(host) {
   const params = new URLSearchParams(window.location.search);
