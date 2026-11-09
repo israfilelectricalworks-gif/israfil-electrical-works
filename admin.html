@@ -1003,8 +1003,13 @@ function filterReportRows() {
       <div class="pagehead"><div><h2 style="margin:0 0 6px">Google Analytics Overview</h2><p class="muted" id="dashboardGaStatus">Loading saved GA4 property...</p></div><button class="ghost small" type="button" onclick="renderPage('gmb')">Open Analytics</button></div>
       <label for="dashboardGaPeriod">Analytics date range</label>
       <select id="dashboardGaPeriod" style="max-width:260px">
-        <option value="today">Today</option><option value="yesterday">Yesterday</option><option value="7" selected>Last 7 Days</option><option value="30">Last 30 Days</option><option value="90">Last 90 Days</option><option value="365">Last 365 Days</option>
+        <option value="today">Today</option><option value="yesterday">Yesterday</option><option value="7" selected>Last 7 Days</option><option value="30">Last 30 Days</option><option value="90">Last 90 Days</option><option value="custom">Custom Date Range</option>
       </select>
+      <div id="dashboardGaCustomDates" style="display:none;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <div style="flex:1;min-width:130px"><label for="dashboardGaStart">From</label><input id="dashboardGaStart" type="date"></div>
+        <div style="flex:1;min-width:130px"><label for="dashboardGaEnd">To</label><input id="dashboardGaEnd" type="date"></div>
+        <button id="dashboardGaApply" class="gold" type="button" style="align-self:end">Apply Dates</button>
+      </div>
       <div id="dashboardGaMetrics" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:12px 0">
         <div class="panel muted">Loading Analytics metrics...</div>
       </div>
@@ -1359,7 +1364,15 @@ updateReport();
       statusBox.textContent='Loading '+(periodSelect.selectedOptions[0]?.textContent||range)+' Analytics data...';
       metricBox.innerHTML='<div class="panel muted">Loading metrics...</div>';
       try{
-        const data=await dashboardGoogleCall('ga_timeseries',{property,range});
+        let request={property,range};
+        if(range==='custom'){
+          const start=document.getElementById('dashboardGaStart').value;
+          const end=document.getElementById('dashboardGaEnd').value;
+          if(!start||!end||start>end) throw new Error('Valid From aur To dates select karein.');
+          if(end>new Date().toISOString().slice(0,10)) throw new Error('Future date select nahi kar sakte.');
+          request={property,range,startDate:start,endDate:end};
+        }
+        const data=await dashboardGoogleCall('ga_timeseries',request);
         const report=data.report||{},headers=report.metricHeaders||[],rows=report.rows||[];
         const totals=report.totals?.[0]?.metricValues||[],names=headers.map(h=>h.name);
         const totalFor=name=>{const i=names.indexOf(name);return i<0?0:Number(totals[i]?.value||0);};
@@ -1376,7 +1389,18 @@ updateReport();
       const life=await dashboardGoogleCall('ga_lifetime',{property});
       visitCount.textContent=Number(life.sessions||0).toLocaleString('en-IN');
     }catch(e){visitCount.textContent='—';statusBox.textContent='Lifetime visits unavailable: '+e.message;}
-    periodSelect.addEventListener('change',updateDashboardAnalytics);
+    const customDates=document.getElementById('dashboardGaCustomDates');
+    const startInput=document.getElementById('dashboardGaStart');
+    const endInput=document.getElementById('dashboardGaEnd');
+    const applyDates=document.getElementById('dashboardGaApply');
+    const today=new Date().toISOString().slice(0,10);
+    endInput.max=today;startInput.max=today;
+    periodSelect.addEventListener('change',()=>{
+      const isCustom=periodSelect.value==='custom';
+      customDates.style.display=isCustom?'flex':'none';
+      if(!isCustom) updateDashboardAnalytics();
+    });
+    applyDates.addEventListener('click',updateDashboardAnalytics);
     await updateDashboardAnalytics();
   }
  } catch(e) {
