@@ -1934,9 +1934,9 @@ async function settingsPage(host) {
  const fields=[
   ['site_title','Website Title','Israfil Electrical Works'],
   ['tagline','Brand Tagline','Complete Electrical Solution'],
-  ['logo_url','Logo Image URL','asset/logo.webp'],
-  ['favicon_url','Favicon URL','asset/favicon.png'],
-  ['hero_banner_url','Homepage Banner Image URL','asset/hero-banner.webp'],
+  ['logo_url','Logo Image','asset/logo.webp','image'],
+  ['favicon_url','Favicon Image','asset/favicon.png','image'],
+  ['hero_banner_url','Homepage Banner Image','asset/hero-banner.webp','image'],
   ['ticker_text','Top Announcement Bar Text','⚡ INDUSTRIAL & COMMERCIAL ELECTRICAL CONTRACTOR • COMPLETE ELECTRICAL SOLUTION'],
   ['hero_heading','Homepage Main Heading',''],
   ['hero_description','Homepage Description',''],
@@ -1946,10 +1946,15 @@ async function settingsPage(host) {
   <div class="pagehead"><div><h1>Settings & Website Control</h1><div class="muted">Yahan save kiye gaye changes live website par apply honge.</div></div></div>
   <div class="panel"><h2>Website Branding & Homepage</h2>
    <form id="websiteSettingsForm">
-    <div class="formgrid">${fields.map(([key,label,placeholder])=>`
+    <div class="formgrid">${fields.map(([key,label,placeholder,type])=>`
      <div class="${['ticker_text','hero_description','meta_description'].includes(key)?'span':''}">
       <label for="ws_${key}">${label}</label>
-      ${['ticker_text','hero_description','meta_description'].includes(key)
+      ${type==='image'
+       ? `<input id="ws_${key}" type="file" accept="image/png,image/jpeg,image/webp,image/avif" data-image-key="${key}">
+          <div class="muted">PNG, JPG, WEBP, AVIF · Max 5 MB</div>
+          <img id="preview_${key}" src="${escapeHTML(s[key]||'')}" alt="${escapeHTML(label)} preview" style="display:${s[key]?'block':'none'};max-width:100%;max-height:150px;object-fit:contain;margin-top:10px;border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:6px">
+          <input type="hidden" name="${key}" value="${escapeHTML(s[key]||'')}">`
+       : ['ticker_text','hero_description','meta_description'].includes(key)
        ? `<textarea id="ws_${key}" name="${key}" rows="3" placeholder="${escapeHTML(placeholder)}">${escapeHTML(s[key]||'')}</textarea>`
        : `<input id="ws_${key}" name="${key}" value="${escapeHTML(s[key]||'')}" placeholder="${escapeHTML(placeholder)}">`}
      </div>`).join('')}
@@ -1988,12 +1993,33 @@ async function settingsPage(host) {
    <p class="muted">Google Analytics aur Business Profile integrations manage karein.</p>
   </div>`;
  const form=host.querySelector('#websiteSettingsForm');
- form.querySelectorAll('[name]').forEach(input=>{input.value=s[input.name]??'';});
+ form.querySelectorAll('input[name],textarea[name]').forEach(input=>{input.value=s[input.name]??'';});
+ form.querySelectorAll('[data-image-key]').forEach(input=>{
+  input.addEventListener('change',()=>{
+   const file=input.files?.[0], key=input.dataset.imageKey, preview=host.querySelector('#preview_'+key);
+   if(!file)return;
+   if(!file.type.startsWith('image/')){notify('Please select a valid image.',true);input.value='';return;}
+   if(file.size>5*1024*1024){notify('Image 5 MB se chhoti honi chahiye.',true);input.value='';return;}
+   preview.src=URL.createObjectURL(file);preview.style.display='block';
+  });
+ });
  form.addEventListener('submit',async e=>{
-  e.preventDefault(); const btn=host.querySelector('#saveWebsiteSettings'); btn.disabled=true; btn.textContent='Saving...';
+  e.preventDefault(); const btn=host.querySelector('#saveWebsiteSettings'); btn.disabled=true; btn.textContent='Uploading & Saving...';
   try {
    const next={...s};
-   new FormData(form).forEach((v,k)=>next[k]=String(v).trim());
+   for(const input of form.querySelectorAll('input[name],textarea[name]')){
+    if(input.type!=='file') next[input.name]=String(input.value).trim();
+   }
+   const imageInputs=Array.from(form.querySelectorAll('[data-image-key]')).filter(input=>input.files?.[0]);
+   for(const input of imageInputs){
+    const file=input.files[0], key=input.dataset.imageKey;
+    const safeExt=(file.name.split('.').pop()||'img').toLowerCase().replace(/[^a-z0-9]/g,'');
+    const path=key+'/'+crypto.randomUUID()+'.'+safeExt;
+    const {error:uploadError}=await db.storage.from('site-media').upload(path,file,{upsert:false,contentType:file.type,cacheControl:'3600'});
+    if(uploadError) throw uploadError;
+    const {data:publicData}=db.storage.from('site-media').getPublicUrl(path);
+    next[key]=publicData.publicUrl;
+   }
    await saveSiteContent(WEBSITE_SETTINGS_KEY,next);
    Object.assign(s,next);
    host.querySelector('#websiteSettingsStatus').textContent=' Saved. Website changes publish ho gaye.';
