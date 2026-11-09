@@ -519,7 +519,7 @@ th{background:#FAF7FD;color:#695777}
    <label for="password">Password</label>
    <input id="password" type="password" required autocomplete="current-password"
           placeholder="Enter password">
-   <button class="full" id="adminSignInButton" type="button">Sign In →</button>
+   <button class="full" id="adminSignInButton" type="submit">Sign In →</button>
   </form>
   <div id="loginError" class="error"></div>
   <p class="muted">Secure administrator access only.</p>
@@ -709,8 +709,7 @@ async function boot() {
 
 const adminLoginForm = document.getElementById('loginForm');
 const adminSignInButton = document.getElementById('adminSignInButton');
-adminSignInButton.addEventListener('click', event => login(event));
-adminLoginForm.addEventListener('submit', event => { event.preventDefault(); login(event); });
+adminLoginForm.addEventListener('submit', event => login(event));
 
 
 /* Accessible lamp control: pull or tap the handle to toggle either way */
