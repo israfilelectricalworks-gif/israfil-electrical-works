@@ -637,7 +637,7 @@ async function verifyAdmin(user) {
 async function login(event) {
  event.preventDefault();
  const errorBox=$('#loginError');
- const submitButton=$('#loginForm button[type="submit"]');
+ const submitButton=$('#adminSignInButton');
  errorBox.textContent='';
  submitButton.disabled=true;
  submitButton.textContent='Verifying...';
