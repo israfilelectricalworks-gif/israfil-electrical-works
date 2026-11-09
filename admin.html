@@ -998,7 +998,13 @@ function filterReportRows() {
         <div class="stat">${enquiryCount}</div>
         <div>View all enquiries →</div>
       </div>
-    </div> 
+    </div>
+    <div class="panel" id="dashboardGoogleAnalytics">
+      <div class="pagehead"><div><h2 style="margin:0 0 6px">Google Analytics Overview</h2><p class="muted" id="dashboardGaStatus">Saved GA4 report will appear here after loading it in GMB Management.</p></div><button class="ghost small" type="button" onclick="renderPage('gmb')">Open Analytics</button></div>
+      <div id="dashboardGaMetrics" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:12px 0 0">
+        <div class="panel muted">No saved GA4 report yet.</div>
+      </div>
+    </div>
     <div class="panel">
   <h2>GMB Performance</h2>
 
@@ -1316,6 +1322,30 @@ periodSelect.addEventListener('change', () => {
 
 applyButton.addEventListener('click', updateReport);
 updateReport();
+ try {
+  const savedGa = await readSiteContent('google_analytics_report', null);
+  const metricBox=document.getElementById('dashboardGaMetrics');
+  const statusBox=document.getElementById('dashboardGaStatus');
+  if(savedGa?.report?.metricHeaders?.length) {
+   const row=savedGa.report.rows?.[0], vals=row?.metricValues||[];
+   const metrics=savedGa.report.metricHeaders.map((h,i)=>({name:h.name,value:Number(vals[i]?.value||0)}));
+   const labels={activeUsers:'Active Users',sessions:'Sessions',screenPageViews:'Page Views',engagementRate:'Engagement Rate'};
+   metricBox.innerHTML=metrics.map(m=>{
+    const v=m.name==='engagementRate'?(m.value*100).toFixed(1)+'%':m.value.toLocaleString('en-IN',{maximumFractionDigits:2});
+    return '<div class="panel"><div class="muted">'+escapeHTML(labels[m.name]||m.name)+'</div><div class="stat" style="color:var(--text);font-size:25px">'+escapeHTML(v)+'</div></div>';
+   }).join('');
+   const updated=savedGa.fetchedAt?new Date(savedGa.fetchedAt).toLocaleString('en-IN'):'';
+   statusBox.textContent=(savedGa.propertyName||savedGa.property||'GA4 property')+' · Last 30 days · Updated '+updated;
+   const users=metrics.find(m=>m.name==='activeUsers');
+   const visitCount=document.getElementById('websiteVisitCount');
+   if(users && visitCount) visitCount.textContent=users.value.toLocaleString('en-IN');
+  } else {
+   statusBox.textContent='No saved GA4 report yet. Open GMB Management, load the report once, and it will be saved here.';
+  }
+ } catch(e) {
+  const statusBox=document.getElementById('dashboardGaStatus');
+  if(statusBox) statusBox.textContent='Could not load saved GA4 report: '+e.message;
+ }
  const websiteTrafficChart = new Chart(
   document.getElementById('websiteTrafficChart'),
   {
@@ -1950,13 +1980,36 @@ async function telegramMessagesPage(host, selectedChat = null) {
    }catch(e){select.innerHTML='<option value="">Account API unavailable</option>';showError($id('gbpLocationDetails'),e);}
    select.onchange=loadLocations;
   }
+  let savedGaSettings = {};
+  let savedGaReport = null;
+  try {
+   savedGaSettings = await readSiteContent('google_analytics_settings', {});
+   savedGaReport = await readSiteContent('google_analytics_report', null);
+  } catch(e) { showError($id('gaReport'),e); }
+  function renderGaReport(report, periodLabel='Saved report') {
+   const headers=report?.metricHeaders||[],row=report?.rows?.[0],values=row?.metricValues||[];
+   if(!headers.length){$id('gaReport').innerHTML='<p class="muted">No Analytics report data returned yet.</p>';return;}
+   $id('gaReport').innerHTML='<div class="grid2">'+headers.map((h,i)=>{
+    const raw=Number(values[i]?.value||0);
+    const value=h.name==='engagementRate'?(raw*100).toFixed(1)+'%':raw.toLocaleString('en-IN',{maximumFractionDigits:2});
+    return '<div class="stat"><b>'+escapeHTML(h.name.replace(/([A-Z])/g,' $1'))+'</b><div style="font-size:25px;font-weight:700">'+escapeHTML(value)+'</div></div>';
+   }).join('')+'</div><p class="muted">'+escapeHTML(periodLabel)+'</p>';
+  }
   async function loadProperties(){
    const select=$id('gaPropertySelect');select.innerHTML='<option value="">Loading GA4 properties...</option>';
    try{
     const data=await call('ga_properties');const rows=data.properties||[];
     select.innerHTML=rows.length?'<option value="">Select a GA4 property</option>'+rows.map(x=>'<option value="'+escapeHTML(x.property)+'">'+escapeHTML(x.displayName||x.property)+' ('+escapeHTML(x.property)+')</option>').join(''):'<option value="">No GA4 properties found</option>';
-    $id('loadGaReport').disabled=!rows.length;
-    select.onchange=()=>$id('loadGaReport').disabled=!select.value;
+    const preferred=savedGaSettings.property||savedGaReport?.property||'';
+    if(preferred && rows.some(x=>x.property===preferred)) select.value=preferred;
+    $id('loadGaReport').disabled=!select.value;
+    select.onchange=()=>{
+     $id('loadGaReport').disabled=!select.value;
+     if(select.value) saveSiteContent('google_analytics_settings',{property:select.value,propertyName:select.selectedOptions[0]?.textContent||''}).catch(e=>notify('GA4 selection save failed: '+e.message,true));
+    };
+    if(savedGaReport?.report && savedGaReport.property===select.value) {
+     renderGaReport(savedGaReport.report,'Saved report · '+new Date(savedGaReport.fetchedAt||Date.now()).toLocaleString('en-IN'));
+    }
    }catch(e){select.innerHTML='<option value="">Could not load GA4 properties</option>';showError($id('gaReport'),e);}
   }
   async function loadGbpPerformance(){
@@ -1976,12 +2029,20 @@ async function telegramMessagesPage(host, selectedChat = null) {
   async function loadGaReport(){
    const property=$id('gaPropertySelect').value;if(!property)return;
    const out=$id('gaReport');out.textContent='Loading website report...';
+   const button=$id('loadGaReport');button.disabled=true;
    try{
     const data=await call('ga_report',{property,days:30});
-    const headers=data.report?.metricHeaders||[],row=data.report?.rows?.[0],values=row?.metricValues||[];
-    if(!headers.length){out.innerHTML='<p class="muted">No Analytics report data returned yet.</p>';return;}
-    out.innerHTML='<div class="grid2">'+headers.map((h,i)=>'<div class="stat"><b>'+escapeHTML(h.name.replace(/([A-Z])/g,' $1'))+'</b><div style="font-size:25px;font-weight:700">'+escapeHTML(values[i]?.value||'0')+(h.name==='engagementRate'?'%':'')+'</div></div>').join('')+'</div><p class="muted">Report period: last 30 days, ending yesterday.</p>';
+    if(!data.report?.metricHeaders?.length){out.innerHTML='<p class="muted">No Analytics report data returned yet.</p>';return;}
+    const fetchedAt=new Date().toISOString();
+    const propertyName=$id('gaPropertySelect').selectedOptions[0]?.textContent||property;
+    await saveSiteContent('google_analytics_settings',{property,propertyName});
+    await saveSiteContent('google_analytics_report',{property,propertyName,report:data.report,fetchedAt,days:30});
+    savedGaSettings={property,propertyName};
+    savedGaReport={property,propertyName,report:data.report,fetchedAt,days:30};
+    renderGaReport(data.report,'Last 30 days, ending yesterday · Updated '+new Date(fetchedAt).toLocaleString('en-IN'));
+    notify('GA4 report saved. It will appear automatically in Dashboard.');
    }catch(e){showError(out,e);}
+   finally{button.disabled=!$id('gaPropertySelect').value;}
   }
   $id('connectGoogleBtn').onclick=async()=>{
    const btn=$id('connectGoogleBtn');btn.disabled=true;btn.textContent='Opening Google...';
