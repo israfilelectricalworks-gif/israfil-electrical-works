@@ -999,22 +999,6 @@ function filterReportRows() {
         <div>View all enquiries →</div>
       </div>
     </div>
-    <div class="panel" id="dashboardGoogleAnalytics">
-      <div class="pagehead"><div><h2 style="margin:0 0 6px">Google Analytics Overview</h2><p class="muted" id="dashboardGaStatus">Loading saved GA4 property...</p></div><button class="ghost small" type="button" onclick="renderPage('gmb')">Open Analytics</button></div>
-      <label for="dashboardGaPeriod">Analytics date range</label>
-      <select id="dashboardGaPeriod" style="max-width:260px">
-        <option value="today">Today</option><option value="yesterday">Yesterday</option><option value="7" selected>Last 7 Days</option><option value="30">Last 30 Days</option><option value="90">Last 90 Days</option><option value="custom">Custom Date Range</option>
-      </select>
-      <div id="dashboardGaCustomDates" style="display:none;gap:8px;flex-wrap:wrap;margin-top:10px">
-        <div style="flex:1;min-width:130px"><label for="dashboardGaStart">From</label><input id="dashboardGaStart" type="date"></div>
-        <div style="flex:1;min-width:130px"><label for="dashboardGaEnd">To</label><input id="dashboardGaEnd" type="date"></div>
-        <button id="dashboardGaApply" class="gold" type="button" style="align-self:end">Apply Dates</button>
-      </div>
-      <div id="dashboardGaMetrics" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:12px 0">
-        <div class="panel muted">Loading Analytics metrics...</div>
-      </div>
-      <div style="position:relative;height:280px"><canvas id="dashboardGaChart"></canvas></div>
-    </div>
     <div class="panel">
   <h2>GMB Performance</h2>
 
@@ -1145,38 +1129,23 @@ function filterReportRows() {
         : ''}
     </div>
 
-   <div class="panel" id="websiteTrafficPanel">
-  <h2>Website Traffic</h2>
-  <p class="muted">
-    Website visits aur traffic sources
-  </p>
+    <div class="panel" id="websiteTrafficPanel">
+      <div class="pagehead"><div><h2 style="margin:0 0 6px">Website Traffic · Google Analytics</h2><p class="muted" id="dashboardGaStatus">Loading saved GA4 property...</p></div><button class="ghost small" type="button" onclick="renderPage('gmb')">Open Analytics</button></div>
+      <label for="dashboardGaPeriod">Website traffic date range</label>
+      <select id="dashboardGaPeriod" style="max-width:260px">
+        <option value="today">Today</option><option value="yesterday">Yesterday</option><option value="7" selected>Last 7 Days</option><option value="30">Last 30 Days</option><option value="90">Last 90 Days</option><option value="custom">Custom Date Range</option>
+      </select>
+      <div id="dashboardGaCustomDates" style="display:none;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <div style="flex:1;min-width:130px"><label for="dashboardGaStart">From</label><input id="dashboardGaStart" type="date"></div>
+        <div style="flex:1;min-width:130px"><label for="dashboardGaEnd">To</label><input id="dashboardGaEnd" type="date"></div>
+        <button id="dashboardGaApply" class="gold" type="button" style="align-self:end">Apply Dates</button>
+      </div>
+      <div id="dashboardGaMetrics" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:12px 0">
+        <div class="panel muted">Loading Analytics metrics...</div>
+      </div>
+      <div style="position:relative;height:280px"><canvas id="dashboardGaChart"></canvas></div>
+    </div>
 
-  <div class="toolbar" style="flex-wrap:wrap;gap:10px">
-    <select id="websiteTrafficPeriod">
-      <option value="today">Today</option>
-      <option value="yesterday">Yesterday</option>
-      <option value="7" selected>Last 7 Days</option>
-      <option value="30">Last 30 Days</option>
-      <option value="custom">Custom Date Range</option>
-    </select>
-
-    <select id="websiteTrafficMetric">
-      <option value="overview">Overview</option>
-      <option value="google">Google Search</option>
-      <option value="direct">Direct Traffic</option>
-      <option value="referral">Referral / Other Links</option>
-      <option value="unique">Unique Visitors</option>
-    </select>
-  </div>
-
-  <p id="websiteTrafficStatus" class="muted">
-    Real traffic data connect hone ka intezar hai.
-  </p>
-
-  <div style="position:relative;height:280px">
-    <canvas id="websiteTrafficChart"></canvas>
-  </div>
-</div> 
   `;
 if (typeof Chart === 'undefined') {
   throw new Error('Chart.js load nahi hua. Internet connection check karein.');
@@ -1407,34 +1376,7 @@ updateReport();
   const statusBox=document.getElementById('dashboardGaStatus');
   if(statusBox) statusBox.textContent='Could not load GA4 data: '+e.message;
  }
- const websiteTrafficChart = new Chart(
-  document.getElementById('websiteTrafficChart'),
-  {
-    type: 'line',
-    data: {
-      labels: [],
-      datasets: [{
-        label: 'Website Visits',
-        data: [],
-        borderColor: '#1BCFB4',
-        backgroundColor: 'rgba(27,207,180,0.14)',
-        fill: true,
-        tension: 0.3
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: { precision: 0 }
-        }
-      }
-    }
-  }
-); 
-}
+
   
 
 /* ========== LISTS ========== */
