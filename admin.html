@@ -982,9 +982,9 @@ function filterReportRows() {
       <div class="card turquoise"
      onclick="document.getElementById('websiteTrafficPanel').scrollIntoView({behavior:'smooth',block:'start'})"
      style="cursor:pointer">
-  <div>Website Visits</div>
+  <div>Lifetime Website Visits</div>
   <div class="stat" id="websiteVisitCount">—</div>
-  <div>View website traffic ↓</div>
+  <div>All-time sessions · View traffic ↓</div>
 </div>
       <div class="card blue" onclick="renderPage('gmb')" style="cursor:pointer">
   <div>How people discovered you</div>
@@ -1000,10 +1000,15 @@ function filterReportRows() {
       </div>
     </div>
     <div class="panel" id="dashboardGoogleAnalytics">
-      <div class="pagehead"><div><h2 style="margin:0 0 6px">Google Analytics Overview</h2><p class="muted" id="dashboardGaStatus">Saved GA4 report will appear here after loading it in GMB Management.</p></div><button class="ghost small" type="button" onclick="renderPage('gmb')">Open Analytics</button></div>
-      <div id="dashboardGaMetrics" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:12px 0 0">
-        <div class="panel muted">No saved GA4 report yet.</div>
+      <div class="pagehead"><div><h2 style="margin:0 0 6px">Google Analytics Overview</h2><p class="muted" id="dashboardGaStatus">Loading saved GA4 property...</p></div><button class="ghost small" type="button" onclick="renderPage('gmb')">Open Analytics</button></div>
+      <label for="dashboardGaPeriod">Analytics date range</label>
+      <select id="dashboardGaPeriod" style="max-width:260px">
+        <option value="today">Today</option><option value="yesterday">Yesterday</option><option value="7" selected>Last 7 Days</option><option value="30">Last 30 Days</option><option value="90">Last 90 Days</option><option value="365">Last 365 Days</option>
+      </select>
+      <div id="dashboardGaMetrics" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:12px 0">
+        <div class="panel muted">Loading Analytics metrics...</div>
       </div>
+      <div style="position:relative;height:280px"><canvas id="dashboardGaChart"></canvas></div>
     </div>
     <div class="panel">
   <h2>GMB Performance</h2>
@@ -1324,27 +1329,59 @@ applyButton.addEventListener('click', updateReport);
 updateReport();
  try {
   const savedGa = await readSiteContent('google_analytics_report', null);
+  const savedSettings = await readSiteContent('google_analytics_settings', {});
   const metricBox=document.getElementById('dashboardGaMetrics');
   const statusBox=document.getElementById('dashboardGaStatus');
-  if(savedGa?.report?.metricHeaders?.length) {
-   const row=savedGa.report.rows?.[0], vals=row?.metricValues||[];
-   const metrics=savedGa.report.metricHeaders.map((h,i)=>({name:h.name,value:Number(vals[i]?.value||0)}));
-   const labels={activeUsers:'Active Users',sessions:'Sessions',screenPageViews:'Page Views',engagementRate:'Engagement Rate'};
-   metricBox.innerHTML=metrics.map(m=>{
-    const v=m.name==='engagementRate'?(m.value*100).toFixed(1)+'%':m.value.toLocaleString('en-IN',{maximumFractionDigits:2});
-    return '<div class="panel"><div class="muted">'+escapeHTML(labels[m.name]||m.name)+'</div><div class="stat" style="color:var(--text);font-size:25px">'+escapeHTML(v)+'</div></div>';
-   }).join('');
-   const updated=savedGa.fetchedAt?new Date(savedGa.fetchedAt).toLocaleString('en-IN'):'';
-   statusBox.textContent=(savedGa.propertyName||savedGa.property||'GA4 property')+' · Last 30 days · Updated '+updated;
-   const users=metrics.find(m=>m.name==='activeUsers');
-   const visitCount=document.getElementById('websiteVisitCount');
-   if(users && visitCount) visitCount.textContent=users.value.toLocaleString('en-IN');
+  const visitCount=document.getElementById('websiteVisitCount');
+  const periodSelect=document.getElementById('dashboardGaPeriod');
+  const gaChart=new Chart(document.getElementById('dashboardGaChart'),{
+    type:'line',data:{labels:[],datasets:[{label:'Sessions',data:[],borderColor:'#1BCFB4',backgroundColor:'rgba(27,207,180,.14)',fill:true,tension:.3}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{precision:0}}}}
+  });
+  async function dashboardGoogleCall(action,extra={}){
+    const {data:sessionData,error:sessionError}=await db.auth.getSession();
+    if(sessionError)throw sessionError;
+    const token=sessionData.session?.access_token;
+    if(!token)throw new Error('Admin session expired. Please sign in again.');
+    const response=await fetch(SUPABASE_URL+'/functions/v1/google-data-api',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY,'Authorization':'Bearer '+token},body:JSON.stringify({action,...extra})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'Google Analytics request failed ('+response.status+')');
+    return data;
+  }
+  const property=savedSettings.property||savedGa?.property||'';
+  if(!property){
+    statusBox.textContent='GA4 property select karein in GMB Management.';
+    metricBox.innerHTML='<div class="panel muted">No GA4 property selected.</div>';
+    visitCount.textContent='—';
   } else {
-   statusBox.textContent='No saved GA4 report yet. Open GMB Management, load the report once, and it will be saved here.';
+    async function updateDashboardAnalytics(){
+      const range=periodSelect.value;
+      statusBox.textContent='Loading '+(periodSelect.selectedOptions[0]?.textContent||range)+' Analytics data...';
+      metricBox.innerHTML='<div class="panel muted">Loading metrics...</div>';
+      try{
+        const data=await dashboardGoogleCall('ga_timeseries',{property,range});
+        const report=data.report||{},headers=report.metricHeaders||[],rows=report.rows||[];
+        const totals=report.totals?.[0]?.metricValues||[],names=headers.map(h=>h.name);
+        const totalFor=name=>{const i=names.indexOf(name);return i<0?0:Number(totals[i]?.value||0);};
+        const sessions=totalFor('sessions'),users=totalFor('activeUsers'),views=totalFor('screenPageViews'),engagement=totalFor('engagementRate');
+        metricBox.innerHTML=[['Sessions',sessions.toLocaleString('en-IN')],['Active Users',users.toLocaleString('en-IN')],['Page Views',views.toLocaleString('en-IN')],['Engagement Rate',(engagement*100).toFixed(1)+'%']].map(([label,value])=>'<div class="panel"><div class="muted">'+label+'</div><div class="stat" style="color:var(--text);font-size:25px">'+value+'</div></div>').join('');
+        const dateIndex=(report.dimensionHeaders||[]).findIndex(h=>h.name==='date'),sessionIndex=names.indexOf('sessions');
+        gaChart.data.labels=rows.map(r=>{const d=r.dimensionValues?.[dateIndex]?.value||'';return d.length===8?d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8):d;});
+        gaChart.data.datasets[0].data=rows.map(r=>Number(r.metricValues?.[sessionIndex]?.value||0));
+        gaChart.update();
+        statusBox.textContent=(savedSettings.propertyName||savedGa?.propertyName||property)+' · '+(data.label||periodSelect.selectedOptions[0]?.textContent)+' · Updated '+new Date().toLocaleString('en-IN');
+      }catch(e){statusBox.textContent='Analytics load failed: '+e.message;metricBox.innerHTML='<div class="panel error">'+escapeHTML(e.message)+'</div>';}
+    }
+    try{
+      const life=await dashboardGoogleCall('ga_lifetime',{property});
+      visitCount.textContent=Number(life.sessions||0).toLocaleString('en-IN');
+    }catch(e){visitCount.textContent='—';statusBox.textContent='Lifetime visits unavailable: '+e.message;}
+    periodSelect.addEventListener('change',updateDashboardAnalytics);
+    await updateDashboardAnalytics();
   }
  } catch(e) {
   const statusBox=document.getElementById('dashboardGaStatus');
-  if(statusBox) statusBox.textContent='Could not load saved GA4 report: '+e.message;
+  if(statusBox) statusBox.textContent='Could not load GA4 data: '+e.message;
  }
  const websiteTrafficChart = new Chart(
   document.getElementById('websiteTrafficChart'),
