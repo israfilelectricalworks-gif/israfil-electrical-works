@@ -636,23 +636,54 @@ async function verifyAdmin(user) {
 
 async function login(event) {
  event.preventDefault();
- $('#loginError').textContent='';
+ const errorBox=$('#loginError');
+ const submitButton=$('#loginForm button[type="submit"]');
+ errorBox.textContent='';
+ submitButton.disabled=true;
+ submitButton.textContent='Verifying...';
+
  try {
   initClient();
-  const {data,error}=await db.auth.signInWithPassword({
-   email:$('#email').value.trim(),
-   password:$('#password').value
+  const response=await fetch(`${SUPABASE_URL}/functions/v1/admin-login`,{
+   method:'POST',
+   headers:{
+    'Content-Type':'application/json',
+    'apikey':SUPABASE_PUBLISHABLE_KEY
+   },
+   body:JSON.stringify({
+    email:$('#email').value.trim(),
+    password:$('#password').value
+   })
+  });
+  const result=await response.json();
+
+  if(!response.ok) {
+   if(response.status===429) {
+    throw new Error('5 galat attempts ho chuke hain. Admin login 1 ghante ke liye lock hai.');
+   }
+   throw new Error(result.error||'Email ya password galat hai.');
+  }
+
+  const {data,error}=await db.auth.setSession({
+   access_token:result.access_token,
+   refresh_token:result.refresh_token
   });
   if(error) throw error;
+
   if(!await verifyAdmin(data.user)) {
    await db.auth.signOut();
    throw new Error('Admin role not detected. Check your Supabase App Metadata.');
   }
+
   currentUser=data.user;
+  $('#password').value='';
   showApp();
   await renderPage('overview');
  } catch(e) {
-  $('#loginError').textContent=e.message||'Login failed.';
+  errorBox.textContent=e.message||'Login failed.';
+ } finally {
+  submitButton.disabled=false;
+  submitButton.textContent='Sign In →';
  }
 }
 
