@@ -1902,58 +1902,99 @@ async function telegramMessagesPage(host, selectedChat = null) {
  else if(chatIds.length) await openChat(chatIds[0]);
 }
     async function gmbPage(host) {
-  const params = new URLSearchParams(window.location.search);
-  const oauthResult = params.get('google_oauth');
-  const messages = {
-    connected: 'CONNECTED: Google account authorization successful. Access and refresh tokens are securely saved in Supabase. You can now proceed to configure Business Profile locations and GA4 reporting.',
-    cancelled: 'Google authorization was cancelled.',
-    setup_error: 'Google OAuth configuration incomplete. Admin setup is required.',
-    state_error: 'Security verification failed. Please try connecting again.',
-    token_exchange_error: 'Google token exchange failed. Check OAuth client settings.',
-    refresh_token_missing: 'Google did not return offline access. Reconnect and approve consent.',
-    token_storage_error: 'Google authorization succeeded but secure token storage failed.',
-    server_error: 'Google connection failed due to a server error.'
+  const params=new URLSearchParams(window.location.search);
+  const oauthResult=params.get('google_oauth');
+  const messages={connected:'Google account authorization complete. Loading your available accounts and properties...',cancelled:'Google authorization was cancelled.',setup_error:'Google OAuth configuration incomplete. Check server settings.',state_error:'Security verification failed. Please connect again.',token_exchange_error:'Google token exchange failed. Check OAuth client settings.',refresh_token_missing:'Google did not return offline access. Reconnect and approve consent.',token_storage_error:'Google authorization succeeded but secure token storage failed.',server_error:'Google connection failed due to a server error.'};
+  host.innerHTML=`
+   <div class="pagehead"><div><h1>Google Business Profile &amp; Analytics</h1><div class="muted">Connected account data and website reporting.</div></div><button class="ghost" id="googleReloadBtn" type="button">Refresh Data</button></div>
+   <div class="panel"><h2>Google Account Connection</h2><p id="googleTopStatus" class="notice">${messages[oauthResult]||'Checking saved Google authorization...'}</p><button class="gold" id="connectGoogleBtn" type="button">Reconnect Google Account</button><p class="muted">Use the Google account that manages your Business Profile and has access to your GA4 property.</p></div>
+   <div class="panel"><h2>Google Business Profile</h2><div class="grid2"><div><label for="gbpAccountSelect">Business account</label><select id="gbpAccountSelect"><option value="">Loading accounts...</option></select></div><div><label for="gbpLocationSelect">Business location</label><select id="gbpLocationSelect"><option value="">Select account first</option></select></div></div><div id="gbpLocationDetails" class="muted" style="margin-top:12px">Business Profile details will appear here.</div><button class="gold" id="loadGbpPerformance" type="button" disabled>Load Profile Performance (30 days)</button><div id="gbpPerformance" style="margin-top:14px"></div></div>
+   <div class="panel"><h2>Google Analytics 4</h2><div><label for="gaPropertySelect">GA4 Property</label><select id="gaPropertySelect"><option value="">Loading properties...</option></select></div><button class="gold" id="loadGaReport" type="button" disabled style="margin-top:12px">Load Website Report (30 days)</button><div id="gaReport" style="margin-top:14px"></div></div>`;
+  const $id=id=>host.querySelector('#'+id);
+  const topStatus=$id('googleTopStatus');
+  const call=async(action,extra={})=>{
+   const {data:sessionData,error:sessionError}=await db.auth.getSession();
+   if(sessionError)throw sessionError;
+   const token=sessionData.session?.access_token;if(!token)throw new Error('Admin session expired. Please sign in again.');
+   const response=await fetch(SUPABASE_URL+'/functions/v1/google-data-api',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY,'Authorization':'Bearer '+token},body:JSON.stringify({action,...extra})});
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok)throw new Error(data.error||'Google data request failed ('+response.status+')');
+   return data;
   };
-  host.innerHTML = `
-    <div class="pagehead"><div><h1>Google Business Profile & Analytics</h1><div class="muted">Connect Google once to authorize supported Business Profile and GA4 reporting.</div></div></div>
-    <div class="panel">
-      <h2>Google Account Connection</h2>
-      <p class="muted">Use the Google account that has Owner or Manager access to your Business Profile and Viewer or higher access to your GA4 property.</p>
-      <p id="gmbManagementStatus" class="notice">${messages[oauthResult] || 'Google account not yet connected. Connect to continue.'}</p>
-      <button id="connectGoogleAnalyticsBtn" class="gold" type="button">Connect Google Account</button>
-      <p class="muted">Google will ask you to approve access for Business Profile management and Analytics read-only reports.</p>
-    </div>
-    <div class="panel">
-      <h2>Google Business Profile</h2>
-      <p class="muted">After authorization, we can load eligible locations, profile performance, reviews and posts for the connected account.</p>
-    </div>
-    <div class="panel">
-      <h2>Google Analytics 4</h2>
-      <p class="muted">After authorization, select the GA4 property to view website users, sessions, traffic sources and engagement reports.</p>
-    </div>`;
-  const connectGoogleBtn = host.querySelector('#connectGoogleAnalyticsBtn');
-  const status = host.querySelector('#gmbManagementStatus');
-  connectGoogleBtn.addEventListener('click', async () => {
-    try {
-      connectGoogleBtn.disabled = true;
-      connectGoogleBtn.textContent = 'Opening Google...';
-      status.textContent = 'Checking admin session...';
-      const {data:sessionData,error:sessionError}=await db.auth.getSession();
-      if(sessionError) throw sessionError;
-      const accessToken=sessionData.session?.access_token;
-      if(!accessToken) throw new Error('Pehle Admin Panel mein login karo.');
-      const {data,error}=await db.functions.invoke('google-oauth-start',{headers:{Authorization:`Bearer ${accessToken}`}});
-      if(error) throw error;
-      if(!data?.authorization_url) throw new Error(data?.error||'Google authorization URL nahi mila. OAuth secrets/configuration check karein.');
-      window.location.href=data.authorization_url;
-    } catch(error) {
-      status.textContent='Connection failed: '+(error.message||'Unknown error');
-      connectGoogleBtn.disabled=false;
-      connectGoogleBtn.textContent='Connect Google Account';
-    }
-  });
+  const showError=(el,error)=>{el.innerHTML='<p class="notice" style="color:#b42318">'+escapeHTML(error.message||String(error))+'</p>';};
+  async function loadLocations(){
+   const account=$id('gbpAccountSelect').value,select=$id('gbpLocationSelect');
+   select.innerHTML='<option value="">Loading locations...</option>';
+   $id('gbpLocationDetails').textContent='Loading Business Profile locations...';
+   $id('loadGbpPerformance').disabled=true;
+   if(!account){select.innerHTML='<option value="">No account selected</option>';return;}
+   try{
+    const data=await call('gbp_locations',{account});
+    const rows=data.locations||[];
+    select.innerHTML=rows.length?'<option value="">Select a location</option>'+rows.map(x=>'<option value="'+escapeHTML(x.name||'')+'">'+escapeHTML(x.title||x.name||'Business location')+'</option>').join(''):'<option value="">No accessible locations found</option>';
+    select.onchange=()=>{
+     const loc=rows.find(x=>x.name===select.value);$id('loadGbpPerformance').disabled=!loc;
+     $id('gbpLocationDetails').innerHTML=loc?'<b>'+escapeHTML(loc.title||'Business location')+'</b><br>'+escapeHTML(loc.storefrontAddress?.addressLines?.join(', ')||'Address not provided')+'<br>'+escapeHTML(loc.phoneNumbers?.primaryPhone||'')+(loc.websiteUri?'<br><a href="'+escapeHTML(loc.websiteUri)+'" target="_blank" rel="noopener">Website</a>':''):'Select a location to view details.';
+    };
+    select.onchange();
+    if(!rows.length)$id('gbpLocationDetails').textContent='No locations were returned for this account.';
+   }catch(e){select.innerHTML='<option value="">Could not load locations</option>';showError($id('gbpLocationDetails'),e);}
+  }
+  async function loadAccounts(){
+   const select=$id('gbpAccountSelect');select.innerHTML='<option value="">Loading accounts...</option>';
+   try{
+    const data=await call('gbp_accounts');const rows=data.accounts||[];
+    select.innerHTML=rows.length?rows.map(x=>'<option value="'+escapeHTML(x.name)+'">'+escapeHTML(x.accountName||x.name)+' ('+escapeHTML(x.type||'Account')+')</option>').join(''):'<option value="accounts/-">All accessible locations</option>';
+    if(!rows.length)select.value='accounts/-';
+    await loadLocations();
+   }catch(e){select.innerHTML='<option value="">Account API unavailable</option>';showError($id('gbpLocationDetails'),e);}
+   select.onchange=loadLocations;
+  }
+  async function loadProperties(){
+   const select=$id('gaPropertySelect');select.innerHTML='<option value="">Loading GA4 properties...</option>';
+   try{
+    const data=await call('ga_properties');const rows=data.properties||[];
+    select.innerHTML=rows.length?'<option value="">Select a GA4 property</option>'+rows.map(x=>'<option value="'+escapeHTML(x.property)+'">'+escapeHTML(x.displayName||x.property)+' ('+escapeHTML(x.property)+')</option>').join(''):'<option value="">No GA4 properties found</option>';
+    $id('loadGaReport').disabled=!rows.length;
+    select.onchange=()=>$id('loadGaReport').disabled=!select.value;
+   }catch(e){select.innerHTML='<option value="">Could not load GA4 properties</option>';showError($id('gaReport'),e);}
+  }
+  async function loadGbpPerformance(){
+   const loc=$id('gbpLocationSelect').value;if(!loc)return;
+   const out=$id('gbpPerformance');out.textContent='Loading profile performance...';
+   try{
+    const data=await call('gbp_performance',{location:loc});
+    const series=(data.performance?.multiDailyMetricTimeSeries||[]).flatMap(x=>x.dailyMetricTimeSeries||[]);
+    if(!series.length){out.innerHTML='<p class="muted">No performance data returned for this location and date range.</p>';return;}
+    out.innerHTML=series.map(s=>{
+     const points=s.timeSeries?.datedValues||[];
+     const total=points.reduce((n,p)=>n+Number(p.value?.value||0),0);
+     return '<div class="stat"><b>'+escapeHTML((s.dailyMetric||'').replaceAll('_',' '))+'</b><div style="font-size:24px;font-weight:700">'+total.toLocaleString('en-IN')+'</div></div>';
+    }).join('');
+   }catch(e){showError(out,e);}
+  }
+  async function loadGaReport(){
+   const property=$id('gaPropertySelect').value;if(!property)return;
+   const out=$id('gaReport');out.textContent='Loading website report...';
+   try{
+    const data=await call('ga_report',{property,days:30});
+    const headers=data.report?.metricHeaders||[],row=data.report?.rows?.[0],values=row?.metricValues||[];
+    if(!headers.length){out.innerHTML='<p class="muted">No Analytics report data returned yet.</p>';return;}
+    out.innerHTML='<div class="grid2">'+headers.map((h,i)=>'<div class="stat"><b>'+escapeHTML(h.name.replace(/([A-Z])/g,' $1'))+'</b><div style="font-size:25px;font-weight:700">'+escapeHTML(values[i]?.value||'0')+(h.name==='engagementRate'?'%':'')+'</div></div>').join('')+'</div><p class="muted">Report period: last 30 days, ending yesterday.</p>';
+   }catch(e){showError(out,e);}
+  }
+  $id('connectGoogleBtn').onclick=async()=>{
+   const btn=$id('connectGoogleBtn');btn.disabled=true;btn.textContent='Opening Google...';
+   try{const {data:sessionData}=await db.auth.getSession();const token=sessionData.session?.access_token;if(!token)throw new Error('Please sign in to Admin Panel first.');
+    const {data,error}=await db.functions.invoke('google-oauth-start',{headers:{Authorization:'Bearer '+token}});if(error)throw error;if(!data?.authorization_url)throw new Error(data?.error||'Google authorization URL not returned.');window.location.href=data.authorization_url;
+   }catch(e){topStatus.textContent='Connection failed: '+e.message;btn.disabled=false;btn.textContent='Reconnect Google Account';}
+  };
+  $id('loadGbpPerformance').onclick=loadGbpPerformance;
+  $id('loadGaReport').onclick=loadGaReport;
+  $id('googleReloadBtn').onclick=async()=>{topStatus.textContent='Refreshing Google data...';await Promise.all([loadAccounts(),loadProperties()]);topStatus.textContent='Google data refresh completed. If an API is unavailable, check the message in its section.';};
+  await Promise.all([loadAccounts(),loadProperties()]);
+  topStatus.textContent='Google authorization found. Choose your Business Profile location and GA4 property to load reports.';
 }
-
 /* ========== SETTINGS + LIVE WEBSITE CONTROL ========== */
 const WEBSITE_SETTINGS_KEY = 'website_settings';
 const WEBSITE_OFFERS_KEY = 'website_offers';
