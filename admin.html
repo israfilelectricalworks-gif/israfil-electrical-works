@@ -707,18 +707,18 @@ async function boot() {
  }
 }
 
-$('#loginForm').addEventListener('submit',login);
+$('#loginForm').onsubmit = login;
 
 
-/* Reliable pull-cord lamp: pointer/touch drag and keyboard support */
+/* Accessible lamp control: pull or tap the handle to toggle either way */
 const lampToggle = document.getElementById('lampToggle');
 const lampCord = document.getElementById('lampCord');
 const loginScreen = document.getElementById('loginScreen');
 let cordStartY = 0;
 let cordPull = 0;
 let cordDragging = false;
-let cordTriggered = false;
-
+let cordDidPull = false;
+let suppressNextLampClick = false;
 function renderLampCord() {
   lampToggle.style.transform = 'translateY(' + cordPull + 'px)';
   lampCord.style.height = (65 + cordPull) + 'px';
@@ -728,38 +728,29 @@ function toggleLampLight() {
   lampToggle.setAttribute('aria-pressed', String(!isOff));
 }
 lampToggle.addEventListener('pointerdown', event => {
-  event.preventDefault();
-  cordDragging = true;
-  cordTriggered = false;
-  cordStartY = event.clientY;
+  cordDragging = true; cordDidPull = false; cordStartY = event.clientY;
   try { lampToggle.setPointerCapture(event.pointerId); } catch (_) {}
 });
 lampToggle.addEventListener('pointermove', event => {
   if (!cordDragging) return;
-  cordPull = Math.max(0, Math.min(65, event.clientY - cordStartY));
+  cordPull = Math.max(0, Math.min(70, event.clientY - cordStartY));
+  if (cordPull >= 16) cordDidPull = true;
   renderLampCord();
 });
-function releaseLampCord(event) {
+function finishLampPull() {
   if (!cordDragging) return;
-  const pulled = cordPull >= 18 || (event && event.clientY - cordStartY >= 18);
-  cordDragging = false;
-  cordPull = 0;
-  renderLampCord();
-  if (pulled && !cordTriggered) {
-    cordTriggered = true;
-    toggleLampLight();
-  }
+  const pulled = cordDidPull;
+  cordDragging = false; cordPull = 0; renderLampCord();
+  if (pulled) { toggleLampLight(); suppressNextLampClick = true; }
 }
-lampToggle.addEventListener('pointerup', releaseLampCord);
+lampToggle.addEventListener('pointerup', finishLampPull);
 lampToggle.addEventListener('pointercancel', () => {
   cordDragging = false; cordPull = 0; renderLampCord();
 });
-lampToggle.addEventListener('keydown', event => {
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault(); toggleLampLight();
-  }
+lampToggle.addEventListener('click', event => {
+  if (suppressNextLampClick) { suppressNextLampClick = false; event.preventDefault(); return; }
+  toggleLampLight();
 });
-
 $('#logoutBtn').addEventListener('click',async()=>{
  if(db) await db.auth.signOut();
  currentUser=null;
