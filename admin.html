@@ -487,6 +487,23 @@ th{background:#FAF7FD;color:#695777}
   }
   }
   
+
+/* Admin notification center */
+.header-actions{position:relative}
+.notification-wrap{position:relative}
+.notification-bell{position:relative;min-width:42px;padding:9px 11px;background:#F0E7FF;color:#6D35B5;font-size:19px}
+.notification-count{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;border-radius:20px;background:#E5484D;color:#fff;font-size:10px;line-height:18px;text-align:center;font-weight:bold}
+.notification-panel{position:absolute;right:0;top:48px;width:min(380px,calc(100vw - 24px));max-height:70vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:13px;box-shadow:0 12px 35px #21162e25;z-index:20;padding:12px}
+.notification-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 3px 10px}
+.notification-item{padding:11px 9px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:8px}
+.notification-item.unread{background:#F8F3FF}
+.notification-item strong{display:block;font-size:13px;margin-bottom:4px}
+.notification-item p{margin:0;font-size:12px;color:#756980;overflow-wrap:anywhere}
+.notification-item time{font-size:10px;color:#988DA1}
+.notification-actions{display:flex;gap:4px;align-items:flex-start}
+.notification-actions button{padding:5px 7px;font-size:11px}
+@media(max-width:800px){.notification-panel{position:fixed;top:72px;right:10px;max-height:72vh}}
+
 </style>
 </head>
 <body> 
@@ -562,6 +579,13 @@ th{background:#FAF7FD;color:#695777}
    </div>
    <div class="header-actions">
     <span id="userEmail" class="muted"></span>
+    <div class="notification-wrap">
+     <button id="notificationBell" class="notification-bell" type="button" aria-label="Notifications" aria-expanded="false">♢<span id="notificationCount" class="notification-count hidden">0</span></button>
+     <div id="notificationPanel" class="notification-panel hidden" aria-label="Notification center">
+      <div class="notification-head"><strong>Notifications</strong><button id="markAllNotifications" class="ghost small" type="button">Mark all read</button></div>
+      <div id="notificationList"><p class="muted">Loading notifications...</p></div>
+     </div>
+    </div>
     <button id="logoutBtn" class="ghost small" type="button">Sign Out</button>
    </div>
   </header>
@@ -585,6 +609,8 @@ let db = null;
 let currentUser = null;
 let currentPage = 'overview';
 let toastTimer = null;
+let notificationChannel = null;
+let adminNotifications = [];
 
 function escapeHTML(value) {
  return String(value ?? '').replace(/[&<>"']/g, c => ({
@@ -614,6 +640,62 @@ function initClient() {
  }
 }
 
+
+async function loadAdminNotifications() {
+ const {data,error}=await db.from('admin_notifications').select('*').order('created_at',{ascending:false}).limit(50);
+ if(error) { console.error('Notification load failed:',error); return; }
+ adminNotifications=data||[];
+ drawAdminNotifications();
+}
+function drawAdminNotifications() {
+ const unread=adminNotifications.filter(n=>!n.is_read).length;
+ const count=$('#notificationCount');
+ count.textContent=unread>99?'99+':String(unread);
+ count.classList.toggle('hidden',unread===0);
+ const list=$('#notificationList');
+ if(!adminNotifications.length) {
+  list.innerHTML='<p class="muted" style="padding:12px 4px">No notifications yet.</p>';
+  return;
+ }
+ list.innerHTML=adminNotifications.map(n=>`
+  <div class="notification-item ${n.is_read?'':'unread'}" data-notification-id="${escapeHTML(n.id)}">
+   <div><strong>${escapeHTML(n.title)}</strong><p>${escapeHTML(n.message)}</p><time>${new Date(n.created_at).toLocaleString('en-IN')}</time></div>
+   <div class="notification-actions">
+    ${n.is_read?'':'<button type="button" class="ghost" data-notification-action="read">Read</button>'}
+    <button type="button" class="danger" data-notification-action="delete" aria-label="Delete notification">×</button>
+   </div>
+  </div>`).join('');
+}
+async function startAdminNotifications() {
+ if(!db||!currentUser) return;
+ await loadAdminNotifications();
+ if(notificationChannel) await db.removeChannel(notificationChannel);
+ notificationChannel=db.channel('admin-notifications-live')
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'admin_notifications'},payload=>{
+   const n=payload.new;
+   adminNotifications=[n,...adminNotifications.filter(x=>x.id!==n.id)].slice(0,50);
+   drawAdminNotifications();
+   notify(n.title+': '+n.message);
+  })
+  .subscribe();
+}
+async function handleNotificationAction(event) {
+ const action=event.target.closest('[data-notification-action]');
+ const item=event.target.closest('[data-notification-id]');
+ if(!action||!item) return;
+ const id=item.dataset.notificationId;
+ if(action.dataset.notificationAction==='read') {
+  const {error}=await db.from('admin_notifications').update({is_read:true}).eq('id',id);
+  if(error) return notify('Could not mark notification as read',true);
+  adminNotifications=adminNotifications.map(n=>n.id===id?{...n,is_read:true}:n);
+ } else if(action.dataset.notificationAction==='delete') {
+  const {error}=await db.from('admin_notifications').delete().eq('id',id);
+  if(error) return notify('Could not delete notification',true);
+  adminNotifications=adminNotifications.filter(n=>n.id!==id);
+ }
+ drawAdminNotifications();
+}
+
 function showLogin(message='') {
  $('#loginScreen').classList.remove('hidden');
  $('#appScreen').classList.add('hidden');
@@ -624,6 +706,7 @@ function showApp() {
  $('#loginScreen').classList.add('hidden');
  $('#appScreen').classList.remove('hidden');
  $('#userEmail').textContent=currentUser?.email||'';
+ startAdminNotifications();
 }
 
 async function verifyAdmin(user) {
@@ -706,6 +789,26 @@ async function boot() {
   showLogin(e.message);
  }
 }
+
+
+$('#notificationBell').addEventListener('click',()=>{
+ const panel=$('#notificationPanel'),open=panel.classList.contains('hidden');
+ panel.classList.toggle('hidden',!open);
+ $('#notificationBell').setAttribute('aria-expanded',String(open));
+});
+$('#notificationList').addEventListener('click',handleNotificationAction);
+$('#markAllNotifications').addEventListener('click',async()=>{
+ const {error}=await db.from('admin_notifications').update({is_read:true}).eq('is_read',false);
+ if(error) return notify('Could not mark notifications as read',true);
+ adminNotifications=adminNotifications.map(n=>({...n,is_read:true}));
+ drawAdminNotifications();
+});
+document.addEventListener('click',event=>{
+ if(!event.target.closest('.notification-wrap')) {
+  $('#notificationPanel').classList.add('hidden');
+  $('#notificationBell').setAttribute('aria-expanded','false');
+ }
+});
 
 const adminLoginForm = document.getElementById('loginForm');
 const adminSignInButton = document.getElementById('adminSignInButton');
