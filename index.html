@@ -1598,7 +1598,7 @@ if (stats) {
    const media=item.media_type==='video'
     ? '<video controls playsinline preload="metadata" poster="'+esc(item.thumbnail_url||'')+'" style="width:100%;height:190px;object-fit:cover;background:#061322"><source src="'+esc(item.media_url)+'"></video>'
     : '<a class="product-image-link" href="'+esc(item.media_url)+'"><img src="'+esc(item.media_url)+'" alt="'+esc(item.title)+'" loading="lazy"></a>';
-   return '<article class="project-gallery-card">'+media+'<div class="project-gallery-info"><h3>'+esc(item.title)+'</h3><p>'+esc(item.service_category)+(item.project_location?' · '+esc(item.project_location):'')+'</p><p style="margin-top:7px">'+esc(item.description)+'</p></div></article>';
+   return '<article class="project-gallery-card">'+media+'</article>';
   }).join('');
  }catch(err){console.error('Project gallery load failed:',err);grid.innerHTML='<div class="project-gallery-card" style="grid-column:1/-1;padding:24px;color:#afc0d0">Project gallery is temporarily unavailable.</div>';}
 })();
