@@ -26,7 +26,7 @@
 }
 </script>
 <style>
-:root{--navy:#08192d;--navy2:#0c2239;--navy3:#102d49;--gold:#f2b72d;--gold2:#ffd86a;--white:#f7fafd;--muted:#afc0d0;--line:rgba(255,255,255,.11);--green:#25d366;--max:1180px}
+:root{--navy:#08192d;--navy2:#0c2239;--navy3:#102d49;--gold:#f2b72d;--gold2:#ffd86a;--white:#f7fafd;--muted:#afc0d0;--line:rgba(255,255,255,.11);--green:#25d366;--max:1440px}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--navy);color:var(--white);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.6}a{color:inherit;text-decoration:none}img{max-width:100%;display:block}.wrap{width:min(var(--max),92%);margin:auto}
 .top{background:#04111f;border-bottom:1px solid var(--line);font-size:13px;color:#bac8d5}.top .wrap{min-height:36px;display:flex;align-items:center;justify-content:space-between;gap:20px}
 header{position:sticky;top:0;z-index:90;background:rgba(8,25,45,.96);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}.nav{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:18px}
@@ -433,6 +433,15 @@ canvas {
 .project-gallery-info p{margin:0;color:#afc0d0;font-size:13px}
 @media(max-width:900px){.project-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.project-gallery-grid{gap:10px}.project-gallery-card img{height:140px}.project-gallery-info{padding:11px}.project-gallery-info h3{font-size:14px}}
+
+/* Responsive viewport and desktop canvas fixes */
+html{width:100%;max-width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%;}
+body{width:100%;min-width:320px;max-width:100%;margin:0;overflow-x:hidden;}
+.wrap{width:min(var(--max),96%);margin-left:auto;margin-right:auto;}
+main,section,header,footer{max-width:100%;}
+@media(min-width:1400px){:root{--max:1600px}.wrap{width:96%;}}
+@media(max-width:900px){.wrap{width:92%;}.navlinks{display:flex;}}
+@media(max-width:620px){.wrap{width:92%;}.project-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
 </style>
   <!-- Supabase library -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1595,6 +1604,7 @@ if (stats) {
 })();
 </script>
 
+<script>
 /* Live website settings and offers from Supabase */
 (async function(){
  try {
