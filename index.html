@@ -434,6 +434,16 @@ canvas {
 @media(max-width:900px){.project-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.project-gallery-grid{gap:10px}.project-gallery-card img{height:140px}.project-gallery-info{padding:11px}.project-gallery-info h3{font-size:14px}}
 
+/* Project video full-screen popup player */
+.project-video-open{position:relative;display:block;width:100%;height:190px;padding:0;border:0;background:#061322;cursor:pointer;overflow:hidden}
+.project-video-open video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.project-video-play{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:34px;text-shadow:0 2px 14px #000;background:rgba(0,0,0,.12)}
+.project-video-modal{position:fixed;inset:0;z-index:10050;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.94);backdrop-filter:blur(8px)}
+.project-video-modal.show{display:flex}
+.project-video-modal video{display:block;width:min(100%,1100px);max-height:88vh;object-fit:contain;background:#000;border-radius:12px}
+.project-video-modal-close{position:absolute;top:14px;right:16px;width:46px;height:46px;border:0;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;font-size:30px;cursor:pointer}
+@media(max-width:520px){.project-video-open{height:140px}.project-video-modal{padding:8px}.project-video-modal video{width:100%;max-height:82vh}}
+ 
 /* Responsive viewport and desktop canvas fixes */
 html{width:100%;max-width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%;}
 body{width:100%;min-width:320px;max-width:100%;margin:0;overflow-x:hidden;}
@@ -1596,7 +1606,7 @@ if (stats) {
   if(!data||!data.length){grid.innerHTML='<div class="project-gallery-card" style="grid-column:1/-1;padding:24px;color:#afc0d0">Our service and completed project photos/videos will appear here soon.</div>';return;}
   grid.innerHTML=data.map(item=>{
    const media=item.media_type==='video'
-    ? '<video controls playsinline preload="metadata" poster="'+esc(item.thumbnail_url||'')+'" style="width:100%;height:190px;object-fit:cover;background:#061322"><source src="'+esc(item.media_url)+'"></video>'
+    ? '<button type="button" class="project-video-open" data-video-url="'+esc(item.media_url)+'" aria-label="Play project video"><video muted playsinline preload="metadata" poster="'+esc(item.thumbnail_url||'')+'"><source src="'+esc(item.media_url)+'"></video><span class="project-video-play">▶</span></button>'
     : '<a class="product-image-link" href="'+esc(item.media_url)+'"><img src="'+esc(item.media_url)+'" alt="'+esc(item.title)+'" loading="lazy"></a>';
    return '<article class="project-gallery-card">'+media+'</article>';
   }).join('');
@@ -1629,6 +1639,39 @@ if (stats) {
   const active=offers.filter(o=>o.active&&(!o.start_date||new Date(o.start_date+'T00:00:00')<=today)&&(!o.end_date||new Date(o.end_date+'T23:59:59')>=today));
   if(active.length){const section=document.createElement('section');section.id='adminOffers';section.style.cssText='padding:28px 0;background:#102b46';const wrap=document.createElement('div');wrap.className='wrap';wrap.style.cssText='display:grid;gap:14px';active.forEach(o=>{const card=document.createElement('div');card.style.cssText='padding:22px;border:1px solid rgba(242,183,45,.45);border-radius:18px;background:linear-gradient(120deg,#14324f,#0b2036);color:#fff';const badge=document.createElement('small');badge.textContent=o.badge||'SPECIAL OFFER';badge.style.cssText='color:#ffd86a;font-weight:900;letter-spacing:1px';const h=document.createElement('h2');h.textContent=o.title;h.style.cssText='font-size:clamp(22px,3vw,32px);margin:8px 0';const p=document.createElement('p');p.textContent=o.description||'';p.style.color='#c3d0dc';card.append(badge,h,p);if(o.button_text){const a=document.createElement('a');a.className='btn gold';a.textContent=o.button_text;a.href=o.button_url||'/enquiry.html';card.appendChild(a);}wrap.appendChild(card);});section.appendChild(wrap);const hero=document.querySelector('.hero');if(hero)hero.after(section);}
  } catch(e){console.warn('Website live settings could not load:',e.message);}
+})();
+</script>
+<div class="project-video-modal" id="projectVideoModal" aria-hidden="true">
+ <button type="button" class="project-video-modal-close" id="projectVideoModalClose" aria-label="Close video">&times;</button>
+ <video id="projectPopupVideo" controls playsinline preload="none"></video>
+</div>
+<script>
+(function(){
+ const modal=document.getElementById('projectVideoModal');
+ const player=document.getElementById('projectPopupVideo');
+ const closeBtn=document.getElementById('projectVideoModalClose');
+ if(!modal||!player||!closeBtn)return;
+ let isOpen=false;
+ function closeVideo(){
+  if(!isOpen)return;
+  player.pause();player.removeAttribute('src');player.innerHTML='';player.load();
+  modal.classList.remove('show');modal.setAttribute('aria-hidden','true');
+  document.body.style.overflow='';isOpen=false;
+ }
+ function openVideo(url){
+  if(!url)return;
+  player.src=url;modal.classList.add('show');modal.setAttribute('aria-hidden','false');
+  document.body.style.overflow='hidden';isOpen=true;
+  const p=player.play();if(p&&p.catch)p.catch(err=>console.warn('Video autoplay blocked; tap play:',err));
+ }
+ document.addEventListener('click',function(e){
+  const trigger=e.target.closest('.project-video-open');
+  if(trigger){e.preventDefault();openVideo(trigger.dataset.videoUrl);}
+ });
+ closeBtn.addEventListener('click',closeVideo);
+ modal.addEventListener('click',function(e){if(e.target===modal)closeVideo();});
+ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeVideo();});
+ window.addEventListener('popstate',closeVideo);
 })();
 </script>
 </body>
