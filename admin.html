@@ -1785,12 +1785,15 @@ async function projectGalleryPage(host) {
  const rows=data||[];
  host.innerHTML=`
   <div class="pagehead">
-   <div><h1>Project Gallery</h1><div class="muted">Upload project photos and videos. Uploaded media will be published automatically.</div></div>
-   <button class="gold" onclick="openProjectGalleryEditor()">+ Upload Image / Video</button>
+   <div><h1>Project Gallery</h1><div class="muted">Upload single or multiple project photos and videos. Uploaded media will be published automatically.</div></div>
+   <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="ghost" onclick="openProjectGalleryEditor()">+ Single Upload</button>
+    <button class="gold" onclick="openProjectGalleryBulkUploader()">⇧ Bulk Upload</button>
+   </div>
   </div>
   <div class="panel" style="margin-bottom:16px">
-   <b>Upload media</b>
-   <div class="muted">Select Image or Video, then choose your file. JPG, PNG, WebP, AVIF, MP4, WebM, MOV · Maximum 100 MB.</div>
+   <b>Bulk upload</b>
+   <div class="muted">Ek saath multiple images aur videos select karein. JPG, PNG, WebP, AVIF, MP4, WebM, MOV · Maximum 100 MB per file.</div>
   </div>
   <div class="tablewrap"><table>
    <thead><tr><th>Preview</th><th>File</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
@@ -1807,6 +1810,53 @@ async function projectGalleryPage(host) {
   </table></div>
   ${rows.length?'':'<div class="panel muted">Gallery abhi khaali hai. Pehli image ya video upload karein.</div>'}
  `;
+}
+async function openProjectGalleryBulkUploader(){
+ $('#modalRoot').innerHTML=`
+  <div class="modalbg"><div class="modal">
+   <h2>Bulk Upload Images / Videos</h2>
+   <form id="projectGalleryBulkForm">
+    <label>Select multiple images and videos</label>
+    <input name="media_files" type="file" multiple required accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm,video/quicktime">
+    <div id="projectGalleryBulkCount" class="muted" style="margin-top:8px">No files selected.</div>
+    <div class="muted" style="margin-top:8px">Each file max 100 MB. Supported: JPG, PNG, WebP, AVIF, MP4, WebM, MOV. All uploaded files will be published automatically.</div>
+    <div id="projectGalleryBulkProgress" class="muted" style="margin-top:12px;white-space:pre-line"></div>
+    <div class="modalactions"><button type="button" class="ghost" onclick="closeModal()">Cancel</button><button type="submit" class="gold">Upload All & Publish</button></div>
+   </form>
+  </div></div>`;
+ const form=$('#projectGalleryBulkForm'), picker=form.elements.media_files;
+ const count=$('#projectGalleryBulkCount'),progress=$('#projectGalleryBulkProgress');
+ picker.addEventListener('change',()=>{const files=Array.from(picker.files||[]);count.textContent=files.length?files.length+' file(s) selected · '+(files.reduce((n,f)=>n+f.size,0)/1024/1024).toFixed(1)+' MB total':'No files selected.';});
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const files=Array.from(picker.files||[]);
+  if(!files.length)return notify('Pehle images ya videos select karein.',true);
+  const btn=form.querySelector('button[type="submit"]');btn.disabled=true;btn.textContent='Uploading...';picker.disabled=true;
+  const imageTypes=['image/jpeg','image/png','image/webp','image/avif'],videoTypes=['video/mp4','video/webm','video/quicktime'];
+  let success=0,failed=0;const errors=[];
+  for(let i=0;i<files.length;i++){
+   const file=files[i];
+   progress.textContent='Uploading '+(i+1)+' / '+files.length+': '+file.name;
+   try{
+    const type=imageTypes.includes(file.type)?'image':videoTypes.includes(file.type)?'video':'';
+    if(!type)throw new Error('Unsupported file type');
+    if(file.size>100*1024*1024)throw new Error('File exceeds 100 MB');
+    const ext=(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'');
+    const path='project-gallery/'+crypto.randomUUID()+'.'+ext;
+    const {error:uploadError}=await db.storage.from('site-media').upload(path,file,{upsert:false,contentType:file.type,cacheControl:'3600'});
+    if(uploadError)throw uploadError;
+    const media_url=db.storage.from('site-media').getPublicUrl(path).data.publicUrl;
+    const title=file.name.replace(/\\.[^/.]+$/,'').slice(0,120)||(type==='video'?'Project Video':'Project Photo');
+    const {error:insertError}=await db.from('project_gallery').insert({title,description:'',service_category:'Electrical Services',project_location:'',media_type:type,media_url,thumbnail_url:'',sort_order:0,is_published:true,updated_at:new Date().toISOString()});
+    if(insertError)throw insertError;
+    success++;
+   }catch(err){failed++;errors.push(file.name+': '+(err.message||'Upload failed'));}
+   progress.textContent='Processed '+(i+1)+' / '+files.length+'\nSuccessful: '+success+' · Failed: '+failed+(errors.length?'\n'+errors.slice(-5).join('\n'):'');
+  }
+  btn.disabled=false;btn.textContent='Upload All & Publish';picker.disabled=false;
+  if(failed===0){notify(success+' media file(s) uploaded and published.');closeModal();await renderPage('project-gallery');}
+  else{notify(success+' uploaded, '+failed+' failed. Details are shown above.',true);await renderPage('project-gallery');}
+ });
 }
 async function openProjectGalleryEditor(id='') {
  let record={media_type:'image',media_url:'',thumbnail_url:''};
@@ -1844,16 +1894,13 @@ async function openProjectGalleryEditor(id='') {
    if(type==='image'&&!imageTypes.includes(file.type))throw new Error('Image ke liye JPG, PNG, WebP ya AVIF select karein.');
    if(type==='video'&&!videoTypes.includes(file.type))throw new Error('Video ke liye MP4, WebM ya MOV select karein.');
    if(file.size>100*1024*1024)throw new Error('File maximum 100 MB ki honi chahiye.');
-   async function uploadMedia(f){
-    const ext=(f.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'');
-    const path='project-gallery/'+crypto.randomUUID()+'.'+ext;
-    const {error}=await db.storage.from('site-media').upload(path,f,{upsert:false,contentType:f.type,cacheControl:'3600'});
-    if(error)throw error;
-    return db.storage.from('site-media').getPublicUrl(path).data.publicUrl;
-   }
-   const media_url=await uploadMedia(file);
-   const cleanTitle=file.name.replace(/\\.[^/.]+$/,'').slice(0,120)|| (type==='video'?'Project Video':'Project Photo');
-   const payload={title:cleanTitle,description:'',service_category:'Electrical Services',project_location:'',media_type:type,media_url,thumbnail_url:'',sort_order:0,is_published:true,updated_at:new Date().toISOString()};
+   const ext=(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'');
+   const path='project-gallery/'+crypto.randomUUID()+'.'+ext;
+   const {error:uploadError}=await db.storage.from('site-media').upload(path,file,{upsert:false,contentType:file.type,cacheControl:'3600'});
+   if(uploadError)throw uploadError;
+   const media_url=db.storage.from('site-media').getPublicUrl(path).data.publicUrl;
+   const title=file.name.replace(/\\.[^/.]+$/,'').slice(0,120)||(type==='video'?'Project Video':'Project Photo');
+   const payload={title,description:'',service_category:'Electrical Services',project_location:'',media_type:type,media_url,thumbnail_url:'',sort_order:0,is_published:true,updated_at:new Date().toISOString()};
    const result=id?await db.from('project_gallery').update(payload).eq('id',id):await db.from('project_gallery').insert(payload);
    if(result.error)throw result.error;
    closeModal();notify('Media uploaded and published.');await renderPage('project-gallery');
