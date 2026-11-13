@@ -1660,7 +1660,7 @@ if (stats) {
  }
  function openVideo(url){
   if(!url)return;
-  player.pause();player.muted=true;player.defaultMuted=true;player.volume=0;player.src=url;modal.classList.add('show');modal.setAttribute('aria-hidden','false');
+  player.pause();player.muted=true;player.defaultMuted=true;player.volume=0;player.defaultPlaybackRate=1;player.playbackRate=1;player.src=url;player.addEventListener('loadedmetadata',function setNormalSpeed(){player.defaultPlaybackRate=1;player.playbackRate=1;player.removeEventListener('loadedmetadata',setNormalSpeed);},{once:true});modal.classList.add('show');modal.setAttribute('aria-hidden','false');
   document.body.style.overflow='hidden';isOpen=true;
   const p=player.play();if(p&&p.catch)p.catch(err=>console.warn('Video autoplay blocked; tap play:',err));
  }
