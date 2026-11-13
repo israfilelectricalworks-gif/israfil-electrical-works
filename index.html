@@ -1643,7 +1643,7 @@ if (stats) {
 </script>
 <div class="project-video-modal" id="projectVideoModal" aria-hidden="true">
  <button type="button" class="project-video-modal-close" id="projectVideoModalClose" aria-label="Close video">&times;</button>
- <video id="projectPopupVideo" controls playsinline preload="none"></video>
+ <video id="projectPopupVideo" controls muted playsinline preload="none"></video>
 </div>
 <script>
 (function(){
@@ -1660,7 +1660,7 @@ if (stats) {
  }
  function openVideo(url){
   if(!url)return;
-  player.src=url;modal.classList.add('show');modal.setAttribute('aria-hidden','false');
+  player.pause();player.muted=true;player.defaultMuted=true;player.volume=0;player.src=url;modal.classList.add('show');modal.setAttribute('aria-hidden','false');
   document.body.style.overflow='hidden';isOpen=true;
   const p=player.play();if(p&&p.catch)p.catch(err=>console.warn('Video autoplay blocked; tap play:',err));
  }
