@@ -420,85 +420,19 @@ canvas {
     grid-template-columns:1fr;
   }
     }
-/* 3D Cube Game Styling */
-.cube-game-section {
-  padding: 60px 0;
-  background: linear-gradient(135deg, #08192d, #102d49);
-  border-top: 1px solid rgba(255,255,255,.1);
-}
-
-.cube-game-layout {
-  display: grid;
-  grid-template-columns: 1.1fr .9fr;
-  gap: 24px;
-  align-items: center;
-  margin-top: 25px;
-}
-
-.cube-game-stage {
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 20px;
-  background: #08192d;
-}
-
-#cubeGameCanvas {
-  display: block;
-  width: 100%;
-  height: 380px;
-  touch-action: none;
-}
-
-.cube-game-panel {
-  padding: 22px;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 20px;
-  background: rgba(255,255,255,.04);
-}
-
-.cube-game-panel p {
-  color: #afc0d0;
-  line-height: 1.6;
-}
-
-.cube-game-controls {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.cube-game-controls button,
-.cube-game-actions button {
-  padding: 11px;
-  border: 1px solid rgba(255,255,255,.18);
-  border-radius: 9px;
-  background: #102d49;
-  color: white;
-  font-weight: bold;
-}
-
-.cube-game-actions {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  margin-top: 14px;
-}
-
-.cube-game-meta {
-  color: #f2b72d;
-  margin: 15px 0;
-}
-
-@media (max-width: 760px) {
-  .cube-game-layout {
-    grid-template-columns: 1fr;
-  }
-
-  #cubeGameCanvas {
-    height: 320px;
-  }
-}
-  
+/* Project gallery */
+.project-gallery-section{padding:70px 0;background:linear-gradient(180deg,#08192d,#0d2742);border-top:1px solid rgba(255,255,255,.1)}
+.project-gallery-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:28px}
+.project-gallery-card{overflow:hidden;border:1px solid rgba(255,255,255,.13);border-radius:18px;background:#102d49;transition:transform .25s ease,border-color .25s ease}
+.project-gallery-card:hover{transform:translateY(-5px);border-color:rgba(242,183,45,.55)}
+.project-gallery-card .product-image-link{display:block;overflow:hidden}
+.project-gallery-card img{width:100%;height:190px;object-fit:cover;transition:transform .35s ease}
+.project-gallery-card:hover img{transform:scale(1.04)}
+.project-gallery-info{padding:15px}
+.project-gallery-info h3{margin:0 0 5px;font-size:16px;color:#fff}
+.project-gallery-info p{margin:0;color:#afc0d0;font-size:13px}
+@media(max-width:900px){.project-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.project-gallery-grid{gap:10px}.project-gallery-card img{height:140px}.project-gallery-info{padding:11px}.project-gallery-info h3{font-size:14px}}
 </style>
   <!-- Supabase library -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -513,7 +447,7 @@ canvas {
 <a href="#about">About</a>
 <a href="#services">Services</a>
 <a href="#products">Products</a>
-<a href="#cube-game">Game</a>
+<a href="#project-gallery">Project Gallery</a>
 <a href="#locations">Locations</a>
 <a href="#why">Why Us</a>
 <a href="#contact">Contact</a>
@@ -1087,48 +1021,27 @@ See All Products <span>↓</span>
 
 </section>
 
-<section id="cube-game" class="cube-game-section">
+<section id="project-gallery" class="project-gallery-section">
   <div class="wrap">
     <div class="head">
-      <div>
-        <div class="eyebrow">TAKE A QUICK BREAK</div>
-        <h2>Interactive 3D Cube Challenge</h2>
-      </div>
-      <p>Rotate the cube and challenge yourself.</p>
+      <div><div class="eyebrow">Our Work & Solutions</div><h2>Project Gallery</h2></div>
+      <p>Explore our electrical solution capabilities across panels, power distribution, cabling, earthing and industrial infrastructure.</p>
     </div>
-
-    <div class="cube-game-layout">
-      <div class="cube-game-stage">
-        <canvas id="cubeGameCanvas"
-          aria-label="Interactive 3D Rubik's Cube">
-        </canvas>
-      </div>
-
-      <div class="cube-game-panel">
-        <h3>Rubik's Cube</h3>
-        
-<p>Swipe one visible face with one finger to turn it.
-Use two fingers to rotate the whole cube view.</p>
-
-        <div class="cube-game-meta">
-          Status: <strong id="cubeGameStatus">Loading...</strong>
-          <br />
-          Moves: <strong id="cubeMoveCount">0</strong>
-        </div>
-<div class="cube-game-hint">
-  <strong>Single finger:</strong> swipe a visible face to turn it.<br>
-  <strong>Two fingers:</strong> drag to rotate the whole cube view.
-</div>
-        <div class="cube-game-actions">
-          <button id="cubeScramble">Scramble Cube</button>
-          <button id="cubeReset">Reset Cube</button>
-        </div>
-      </div>
+    <div class="project-gallery-grid">
+      <article class="project-gallery-card"><a class="product-image-link" href="asset/products/01-ht-lt-panels.webp"><img src="asset/products/01-ht-lt-panels.webp" alt="HT and LT electrical panels" loading="lazy"></a><div class="project-gallery-info"><h3>HT / LT Panel Solutions</h3><p>Power distribution and panel systems</p></div></article>
+      <article class="project-gallery-card"><a class="product-image-link" href="asset/products/02-pcc-mcc-pmcc.webp"><img src="asset/products/02-pcc-mcc-pmcc.webp" alt="PCC MCC PMCC panels" loading="lazy"></a><div class="project-gallery-info"><h3>PCC / MCC / PMCC Panels</h3><p>Industrial control and distribution</p></div></article>
+      <article class="project-gallery-card"><a class="product-image-link" href="asset/products/09-earthing-systems.webp"><img src="asset/products/09-earthing-systems.webp" alt="Industrial earthing systems" loading="lazy"></a><div class="project-gallery-info"><h3>Earthing Systems</h3><p>Complete industrial earthing solutions</p></div></article>
+      <article class="project-gallery-card"><a class="product-image-link" href="asset/products/12-cable-tray-systems.webp"><img src="asset/products/12-cable-tray-systems.webp" alt="Cable tray systems" loading="lazy"></a><div class="project-gallery-info"><h3>Cable Tray Systems</h3><p>Cable routing and support infrastructure</p></div></article>
+      <article class="project-gallery-card"><a class="product-image-link" href="asset/products/11-substation-solutions.webp"><img src="asset/products/11-substation-solutions.webp" alt="Substation solutions" loading="lazy"></a><div class="project-gallery-info"><h3>Substation Solutions</h3><p>Electrical infrastructure and equipment</p></div></article>
+      <article class="project-gallery-card"><a class="product-image-link" href="asset/products/14-plc-automation-panels.webp"><img src="asset/products/14-plc-automation-panels.webp" alt="PLC automation panels" loading="lazy"></a><div class="project-gallery-info"><h3>PLC & Automation</h3><p>Control and automation panels</p></div></article>
+      <article class="project-gallery-card"><a class="product-image-link" href="asset/products/15-vfd-drive-panels.webp"><img src="asset/products/15-vfd-drive-panels.webp" alt="VFD drive panels" loading="lazy"></a><div class="project-gallery-info"><h3>VFD / Drive Panels</h3><p>Motor control and drive solutions</p></div></article>
+      <article class="project-gallery-card"><a class="product-image-link" href="asset/products/10-lightning-protection.webp"><img src="asset/products/10-lightning-protection.webp" alt="Lightning protection systems" loading="lazy"></a><div class="project-gallery-info"><h3>Lightning Protection</h3><p>Protection and safety systems</p></div></article>
     </div>
+    <p style="margin:18px 0 0;color:#8fa5b9;font-size:12px">Gallery visuals represent our service and solution categories. Actual completed project photographs can be added as they become available.</p>
   </div>
 </section>
-  
-  <section id="locations"><div class="wrap"><div class="head"><div><div class="eyebrow">Locations</div><h2>Service Locations</h2></div><p>Professional site-based electrical work across Noida, NCR and nearby regions.</p></div>
+
+<section id="locations"><div class="wrap"><div class="head"><div><div class="eyebrow">Locations</div><h2>Service Locations</h2></div><p>Professional site-based electrical work across Noida, NCR and nearby regions.</p></div>
 <div class="location-groups"><div><h3 style="margin:0 0 12px;color:#fff">Service Locations</h3><div class="chip-grid"><span class="chip">Noida</span><span class="chip">Greater Noida</span><span class="chip">Dadri</span><span class="chip">Ghaziabad</span><span class="chip">Loni</span><span class="chip">Muradnagar</span><span class="chip">Modinagar</span><span class="chip">Meerut</span><span class="chip">Hapur</span><span class="chip">Bulandshahr</span><span class="chip">Sikandrabad</span><span class="chip">Khurja</span><span class="chip">Jewar</span><span class="chip">Delhi</span><span class="chip">Faridabad</span><span class="chip">Ballabhgarh</span><span class="chip">Gurugram</span><span class="chip">Manesar</span><span class="chip">Bahadurgarh</span><span class="chip">Sonipat</span></div></div>
 <div><h3 style="margin:0 0 12px;color:var(--gold2)">Nearby Regions</h3><div class="chip-grid"><span class="chip near">Delhi NCR</span><span class="chip near">Gautam Buddh Nagar</span><span class="chip near">Ghaziabad Region</span><span class="chip near">Meerut Region</span><span class="chip near">Hapur Region</span><span class="chip near">Bulandshahr Region</span><span class="chip near">Faridabad Region</span><span class="chip near">Gurugram Region</span><span class="chip near">Sonipat Region</span><span class="chip near">NCR Industrial Belt</span></div></div></div></div></section>
 
@@ -1666,7 +1579,7 @@ if (stats) {
 
 })();
 </script>
-<script type="module" src="/cube-game.js"></script>
+
 
 <script>
 /* Live website settings and offers from Supabase */
