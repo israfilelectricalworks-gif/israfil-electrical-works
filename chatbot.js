@@ -72,9 +72,12 @@
     const pending = bubble("Typing…", "bot");
     send.disabled = true;
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch("https://xkgkegsjutozmyxdarns.supabase.co/functions/v1/iew-ai-chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": "sb_publishable_LlhBoPAZcnDX0rxvg7pJGQ_XIbvz5by"
+        },
         body: JSON.stringify({ message: text, history })
       });
       const data = await response.json();
